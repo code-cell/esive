@@ -35,6 +35,36 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v2
 
+      - name: Docker meta for server
+        id: meta_server
+        uses: crazy-max/ghaction-docker-meta@v2
+        with:
+          images: |
+            ghcr.io/code-cell/esive_server
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+
+      - name: Docker meta for client
+        id: meta_client
+        uses: crazy-max/ghaction-docker-meta@v2
+        with:
+          images: |
+            ghcr.io/code-cell/esive_client
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
@@ -49,12 +79,14 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: ghcr.io/code-cell/esive_server:latest,ghcr.io/code-cell/esive_server:${GITHUB_REF}
+          tags: ${{ steps.meta_server.outputs.tags }}
+          labels: ${{ steps.meta_server.outputs.labels }}
           file: Dockerfile.server
 
       - name: Push client to GitHub Packages
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: ghcr.io/code-cell/esive_client:latest,ghcr.io/code-cell/esive_client:${GITHUB_REF}
+          tags: ${{ steps.meta_client.outputs.tags }}
+          labels: ${{ steps.meta_client.outputs.labels }}
           file: Dockerfile.client
