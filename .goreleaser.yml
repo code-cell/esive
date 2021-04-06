@@ -1,0 +1,7 @@
+builds:
+  - id: "client"
+    dir: cmd/client
+    binary: client
+  - id: "server"
+    dir: cmd/server
+    binary: server

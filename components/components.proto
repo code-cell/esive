@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option go_package = "github.com/code-cell/esive/components";
+
+package components;
+
+message Position {
+  int64 x = 1;
+  int64 y = 2;
+}
+
+message Named {
+  string name = 1;
+}
+
+message Looker {
+  float range = 1;
+}
+
+message Speaker {
+  float range = 1;
+}
+
+message Render {
+  string char = 1;
+  int32 color = 2;
+}
