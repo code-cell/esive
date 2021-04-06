@@ -1,6 +1,6 @@
 # Esive
 
-<img width="300" height="300" src="https://raw.githubusercontent.com/code-cell/esive/master/_img/cubicle.svg">
+<img width="400" height="400" src="https://raw.githubusercontent.com/code-cell/esive/master/_img/cubicle.png">
 
 *Esive* is a generic MMO game. Still not set in any theme. The focus of the project is around the technical challenges of MMO, details on the game itself will come as we go.
 
