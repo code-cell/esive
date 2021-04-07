@@ -253,7 +253,7 @@ func (h *serverStats) HandleConn(ctx context.Context, s stats.ConnStats) {
 }
 
 func grpcServer(registry *components.Registry, vision *systems.VisionSystem, movement *systems.MovementSystem, chat *systems.ChatSystem) {
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", 9000))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 9000))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
