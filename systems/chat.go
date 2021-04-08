@@ -40,17 +40,9 @@ func (s *ChatSystem) Say(parentContext context.Context, entity components.Entity
 	defer span.End()
 
 	speakerPos := &components.Position{}
-	err := registry.LoadComponent(ctx, entity, speakerPos)
-	if err != nil {
-		return err
-	}
 	speaker := &components.Speaker{}
-	err = registry.LoadComponent(ctx, entity, speaker)
-	if err != nil {
-		return err
-	}
 	name := &components.Named{}
-	err = registry.LoadComponent(ctx, entity, name)
+	err := registry.LoadComponents(ctx, entity, speakerPos, speaker, name)
 	if err != nil {
 		return err
 	}

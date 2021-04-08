@@ -50,13 +50,9 @@ func (s *VisionSystem) LookAll(ctx context.Context, entity components.Entity) ([
 	)
 	defer span.End()
 
-	lookerPos := &components.Position{}
-	err := registry.LoadComponent(ctx, entity, lookerPos)
-	if err != nil {
-		return nil, err
-	}
 	looker := &components.Looker{}
-	err = registry.LoadComponent(ctx, entity, looker)
+	lookerPos := &components.Position{}
+	err := registry.LoadComponents(ctx, entity, looker, lookerPos)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +86,7 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, entity comp
 	defer span.End()
 
 	render := &components.Render{}
-	err := registry.LoadComponent(ctx, entity, render)
+	err := registry.LoadComponents(ctx, entity, render)
 	if err != nil {
 		if err == redis.Nil {
 			// The entity has no renderer, nothing to do
@@ -181,13 +177,8 @@ func (s *VisionSystem) HandleNewComponent(ctx context.Context, t string, entity 
 	}
 
 	pos := &components.Position{}
-	err := registry.LoadComponent(ctx, entity, pos)
-	if err != nil {
-		return err
-	}
-
 	render := &components.Render{}
-	err = registry.LoadComponent(ctx, entity, render)
+	err := registry.LoadComponents(ctx, entity, pos, render)
 	if err != nil {
 		return err
 	}

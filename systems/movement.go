@@ -30,7 +30,7 @@ func (s *MovementSystem) Move(parentContext context.Context, entity components.E
 	defer span.End()
 
 	pos := &components.Position{}
-	err := registry.LoadComponent(ctx, entity, pos)
+	err := registry.LoadComponents(ctx, entity, pos)
 	if err != nil {
 		panic(err)
 	}

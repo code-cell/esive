@@ -172,24 +172,27 @@ func (b *Registry) DeleteEntity(parentCtx context.Context, entity Entity) error 
 	return nil
 }
 
-func (b *Registry) LoadComponent(parentCtx context.Context, entity Entity, component proto.Message) error {
-	componentType := string(component.ProtoReflect().Descriptor().FullName().Name())
+func (b *Registry) LoadComponents(parentCtx context.Context, entity Entity, components ...proto.Message) error {
+	componentTypes := make([]string, len(components))
+	for i, component := range components {
+		componentTypes[i] = string(component.ProtoReflect().Descriptor().FullName().Name())
+	}
 
-	logger := b.logger.With(zap.Int64("entity_id", int64(entity)), zap.String("component_type", componentType))
-	ctx, span := registryTracer.Start(parentCtx, "LoadComponent")
+	logger := b.logger.With(zap.Int64("entity_id", int64(entity)), zap.Strings("component_type", componentTypes))
+	ctx, span := registryTracer.Start(parentCtx, "LoadComponents")
 	span.SetAttributes(
 		attribute.Int64("entity_id", int64(entity)),
-		attribute.String("componentType", componentType),
+		attribute.Array("componentType", componentTypes),
 	)
 	defer span.End()
 
-	logger.Debug("loading component")
-	err := b.redisStore.HReadProto(ctx, strconv.FormatInt(int64(entity), 10), component)
+	logger.Debug("loading components")
+	err := b.redisStore.HReadProtos(ctx, strconv.FormatInt(int64(entity), 10), components...)
 	if err != nil {
 		if err == redis.Nil {
 			logger.Warn("component not found")
 		} else {
-			logger.Error("error loading component", zap.Error(err))
+			logger.Error("error loading components", zap.Error(err))
 		}
 		return err
 	}

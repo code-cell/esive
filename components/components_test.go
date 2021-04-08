@@ -24,7 +24,7 @@ func TestRegistrySaveLoad(t *testing.T) {
 	require.NoError(t, registry.CreateComponents(context.Background(), entity, position))
 
 	loadedPosition := &Position{}
-	require.NoError(t, registry.LoadComponent(context.Background(), entity, loadedPosition))
+	require.NoError(t, registry.LoadComponents(context.Background(), entity, loadedPosition))
 
 	require.True(t, proto.Equal(position, loadedPosition))
 }
@@ -40,7 +40,7 @@ func TestRegistryLoadMissingComponentType(t *testing.T) {
 	require.NoError(t, err)
 
 	loadedPosition := &Position{}
-	require.Error(t, registry.LoadComponent(context.Background(), entity, loadedPosition))
+	require.Error(t, registry.LoadComponents(context.Background(), entity, loadedPosition))
 }
 
 func TestRegistryLoadComponents(t *testing.T) {

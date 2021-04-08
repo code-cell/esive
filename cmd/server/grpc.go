@@ -43,7 +43,7 @@ func (s *server) move(ctx context.Context, offsetX, offsetY int64) (*models.Posi
 	}
 
 	newPos := &components.Position{}
-	err = s.registry.LoadComponent(ctx, playerData.Entity, newPos)
+	err = s.registry.LoadComponents(ctx, playerData.Entity, newPos)
 	if err != nil {
 		panic(err)
 	}
@@ -100,7 +100,7 @@ func (s *server) Build(ctx context.Context, _ *models.BuildReq) (*models.BuildRe
 
 	playerData := s.players[playerID]
 	pos := &components.Position{}
-	err := s.registry.LoadComponent(ctx, playerData.Entity, pos)
+	err := s.registry.LoadComponents(ctx, playerData.Entity, pos)
 	if err != nil {
 		panic(err)
 	}

@@ -91,24 +91,25 @@ func (s *RedisStore) HDelProto(ctx context.Context, key string, v proto.Message)
 	return nil
 }
 
-func (s *RedisStore) HReadProto(ctx context.Context, key string, v proto.Message) error {
-	name := string(v.ProtoReflect().Descriptor().FullName().Name())
-	res := s.client.HGet(ctx, key, name)
+func (s *RedisStore) HReadProtos(ctx context.Context, key string, values ...proto.Message) error {
+	names := make([]string, len(values))
+	for i, v := range values {
+		names[i] = string(v.ProtoReflect().Descriptor().FullName().Name())
+	}
+	res := s.client.HMGet(ctx, key, names...)
 	if err := res.Err(); err != nil {
-		s.logger.Error("error getting hash member", zap.Error(err), zap.String("key", key), zap.String("name", name))
+		s.logger.Error("error getting hash members", zap.Error(err), zap.String("key", key), zap.Strings("names", names))
 		return err
 	}
-	b, err := res.Bytes()
-	if err != nil {
-		s.logger.Error("error getting bytes", zap.Error(err), zap.String("key", key), zap.String("name", name))
-		return err
+	for i, item := range res.Val() {
+		b := []byte(item.(string))
+		err := proto.Unmarshal(b, values[i])
+		if err != nil {
+			s.logger.Error("error unmarshalling protos", zap.Error(err), zap.String("key", key), zap.Strings("names", names))
+			return err
+		}
+		s.logger.Debug("loaded proto", zap.String("key", key), zap.Strings("names", names))
 	}
-	err = proto.Unmarshal(b, v)
-	if err != nil {
-		s.logger.Error("error unmarshalling protos", zap.Error(err), zap.String("key", key), zap.String("name", name))
-		return err
-	}
-	s.logger.Debug("loaded proto", zap.String("key", key), zap.String("name", name))
 	return nil
 }
 
