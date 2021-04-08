@@ -186,7 +186,13 @@ func (s *VisionSystem) HandleNewComponent(ctx context.Context, t string, entity 
 		return err
 	}
 
-	lookers, extras, err := registry.EntitiesWithComponentType(ctx, &components.Looker{}, &components.Looker{}, &components.Position{}, &components.Render{})
+	render := &components.Render{}
+	err = registry.LoadComponent(ctx, entity, render)
+	if err != nil {
+		return err
+	}
+
+	lookers, extras, err := registry.EntitiesWithComponentType(ctx, &components.Looker{}, &components.Looker{}, &components.Position{})
 	if err != nil {
 		return err
 	}
@@ -196,7 +202,6 @@ func (s *VisionSystem) HandleNewComponent(ctx context.Context, t string, entity 
 		}
 		looker := extras[i][0].(*components.Looker)
 		lookerPos := extras[i][1].(*components.Position)
-		lookerRenderer := extras[i][2].(*components.Render)
 
 		dist := pos.Distance(lookerPos)
 
@@ -212,8 +217,8 @@ func (s *VisionSystem) HandleNewComponent(ctx context.Context, t string, entity 
 				ID:    int64(entity),
 				X:     pos.X,
 				Y:     pos.Y,
-				Char:  lookerRenderer.Char,
-				Color: lookerRenderer.Color,
+				Char:  render.Char,
+				Color: render.Color,
 			})
 		}
 	}
