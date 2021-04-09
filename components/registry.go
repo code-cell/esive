@@ -143,27 +143,21 @@ func (b *Registry) DeleteEntity(parentCtx context.Context, entity Entity) error 
 
 	logger.Debug("deleting entity")
 	idStr := strconv.FormatInt(int64(entity), 10)
-	keys, err := b.redisStore.HKeys(ctx, idStr)
+
+	allComponents := []proto.Message{&Position{}, &Render{}, &Looker{}, &Named{}, &Speaker{}}
+	err := b.LoadComponents(ctx, entity, allComponents...)
 	if err != nil {
-		logger.Error("error finding keys", zap.Error(err))
+		logger.Error("error loading components", zap.Error(err))
 		return err
 	}
-	for _, key := range keys {
-		switch key {
-		case "Position":
-			b.DeleteComponent(ctx, entity, &Position{})
-		case "Render":
-			b.DeleteComponent(ctx, entity, &Render{})
-		case "Looker":
-			b.DeleteComponent(ctx, entity, &Looker{})
-		case "Named":
-			b.DeleteComponent(ctx, entity, &Named{})
-		case "Speaker":
-			b.DeleteComponent(ctx, entity, &Speaker{})
-		default:
-			panic("Unknown component type: " + key)
+
+	for _, component := range allComponents {
+		if err := b.DeleteComponent(ctx, entity, component); err != nil {
+			logger.Error("error removing component", zap.Error(err))
+			return err
 		}
 	}
+
 	err = b.redisStore.Del(ctx, idStr)
 	if err != nil {
 		logger.Error("error deleting entity from redis", zap.Error(err))
