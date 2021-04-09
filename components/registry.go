@@ -203,7 +203,7 @@ func (b *Registry) LoadComponentsFromIndex(parentCtx context.Context, indexKey s
 	defer span.End()
 
 	logger.Debug("loading components from index")
-	return b.sortWithExtras(ctx, indexKey, componentTypes...)
+	return b.redisStore.Sort(ctx, indexKey, componentTypes...)
 }
 
 func (b *Registry) EntitiesWithComponentType(parentCtx context.Context, component proto.Message, componentTypes ...proto.Message) ([]Entity, [][]proto.Message, error) {
@@ -216,51 +216,9 @@ func (b *Registry) EntitiesWithComponentType(parentCtx context.Context, componen
 	defer span.End()
 
 	logger.Debug("loading entities with component type")
-	return b.sortWithExtras(ctx, b.keyEntitiesWithComponentType(component), componentTypes...)
+	return b.redisStore.Sort(ctx, b.keyEntitiesWithComponentType(component), componentTypes...)
 }
 
 func (b *Registry) keyEntitiesWithComponentType(component proto.Message) string {
 	return fmt.Sprintf("by_component:%v", component.ProtoReflect().Descriptor().FullName().Name())
-}
-
-func (b *Registry) sortWithExtras(ctx context.Context, key string, componentTypes ...proto.Message) ([]Entity, [][]proto.Message, error) {
-	get := []string{"#"}
-	for _, componentType := range componentTypes {
-		componentType := componentType.ProtoReflect().Descriptor().FullName().Name()
-		get = append(get, "*->"+string(componentType))
-	}
-
-	res := b.redisStore.client.Sort(ctx, key, &redis.Sort{By: "nosort", Get: get})
-	if err := res.Err(); err != nil {
-		return nil, nil, err
-	}
-
-	entities := make([]Entity, 0)
-	components := make([][]proto.Message, 0)
-
-	resStr := res.Val()
-	for i := 0; i < len(resStr)/(len(componentTypes)+1); i++ {
-		idx := i * (len(componentTypes) + 1)
-		parsed, err := strconv.ParseInt(resStr[idx], 10, 64)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		entityComponents := make([]proto.Message, 0)
-		allComponents := true
-		for i, componentType := range componentTypes {
-			err = proto.Unmarshal([]byte(resStr[idx+1+i]), componentType)
-			if err != nil {
-				return nil, nil, err
-			}
-			entityComponents = append(entityComponents, proto.Clone(componentType))
-		}
-
-		if allComponents {
-			entities = append(entities, Entity(parsed))
-			components = append(components, entityComponents)
-		}
-	}
-
-	return entities, components, nil
 }
