@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/code-cell/esive/models"
+	esive_grpc "github.com/code-cell/esive/grpc"
 	"github.com/rivo/tview"
 )
 
@@ -12,10 +12,10 @@ type GameView struct {
 	WorldView *WorldView
 	ChatView  *ChatView
 
-	client models.IcecreamClient
+	client esive_grpc.EsiveClient
 }
 
-func NewGameView(playerID int64, client models.IcecreamClient, app *tview.Application) *GameView {
+func NewGameView(playerID int64, client esive_grpc.EsiveClient, app *tview.Application) *GameView {
 	chat := NewChatView(client, app)
 	world := NewWorldView(playerID, client, app, chat.input)
 	chat.SetBackView(world)

@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-option go_package = "github.com/acroca/ecs/models";
+option go_package = "github.com/code-cell/esive/grpc";
 
-package models;
+package grpc;
 
-service Icecream {
+service Esive {
   rpc MoveUp(MoveUpReq) returns (MoveUpRes) {}
   rpc MoveDown(MoveDownReq) returns (MoveDownRes) {}
   rpc MoveLeft(MoveLeftReq) returns (MoveLeftRes) {}

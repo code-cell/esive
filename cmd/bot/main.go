@@ -7,7 +7,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/code-cell/esive/models"
+	esive_grpc "github.com/code-cell/esive/grpc"
 	"google.golang.org/grpc"
 )
 
@@ -30,27 +30,27 @@ func runBot(n int) {
 		panic(err)
 	}
 
-	client := models.NewIcecreamClient(conn)
+	client := esive_grpc.NewEsiveClient(conn)
 
-	_, err = client.Join(context.Background(), &models.JoinReq{
+	_, err = client.Join(context.Background(), &esive_grpc.JoinReq{
 		Name: name,
 	})
 	if err != nil {
 		panic(err)
 	}
 
-	visRes, err := client.VisibilityUpdates(context.Background(), &models.VisibilityUpdatesReq{})
+	visRes, err := client.VisibilityUpdates(context.Background(), &esive_grpc.VisibilityUpdatesReq{})
 	if err != nil {
 		panic(err)
 	}
-	chatRes, err := client.ChatUpdates(context.Background(), &models.ChatUpdatesReq{})
+	chatRes, err := client.ChatUpdates(context.Background(), &esive_grpc.ChatUpdatesReq{})
 	if err != nil {
 		panic(err)
 	}
 	go handleBot(client, name, visRes, chatRes)
 }
 
-func handleBot(client models.IcecreamClient, name string, visRes models.Icecream_VisibilityUpdatesClient, chatRes models.Icecream_ChatUpdatesClient) {
+func handleBot(client esive_grpc.EsiveClient, name string, visRes esive_grpc.Esive_VisibilityUpdatesClient, chatRes esive_grpc.Esive_ChatUpdatesClient) {
 	go func() {
 
 		for {
@@ -69,7 +69,7 @@ func handleBot(client models.IcecreamClient, name string, visRes models.Icecream
 				return
 			}
 			if msg.Message.Text == "Hello" {
-				_, err := client.Say(context.Background(), &models.SayReq{
+				_, err := client.Say(context.Background(), &esive_grpc.SayReq{
 					Text: fmt.Sprintf("Hello %v, my name is %v", msg.Message.From, name),
 				})
 				if err != nil {
@@ -84,22 +84,22 @@ func handleBot(client models.IcecreamClient, name string, visRes models.Icecream
 		time.Sleep(time.Duration(rand.Intn(1000)+1000) * time.Millisecond)
 		switch rand.Intn(4) {
 		case 0:
-			_, err := client.MoveUp(context.Background(), &models.MoveUpReq{})
+			_, err := client.MoveUp(context.Background(), &esive_grpc.MoveUpReq{})
 			if err != nil {
 				panic(err)
 			}
 		case 1:
-			_, err := client.MoveDown(context.Background(), &models.MoveDownReq{})
+			_, err := client.MoveDown(context.Background(), &esive_grpc.MoveDownReq{})
 			if err != nil {
 				panic(err)
 			}
 		case 2:
-			_, err := client.MoveLeft(context.Background(), &models.MoveLeftReq{})
+			_, err := client.MoveLeft(context.Background(), &esive_grpc.MoveLeftReq{})
 			if err != nil {
 				panic(err)
 			}
 		case 3:
-			_, err := client.MoveRight(context.Background(), &models.MoveRightReq{})
+			_, err := client.MoveRight(context.Background(), &esive_grpc.MoveRightReq{})
 			if err != nil {
 				panic(err)
 			}

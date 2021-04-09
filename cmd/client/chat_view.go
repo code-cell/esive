@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/code-cell/esive/models"
+	esive_grpc "github.com/code-cell/esive/grpc"
 	tcell "github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -12,7 +12,7 @@ import (
 type ChatView struct {
 	*tview.Flex
 
-	client   models.IcecreamClient
+	client   esive_grpc.EsiveClient
 	backView tview.Primitive
 	app      *tview.Application
 
@@ -22,7 +22,7 @@ type ChatView struct {
 	lines []string
 }
 
-func NewChatView(client models.IcecreamClient, app *tview.Application) *ChatView {
+func NewChatView(client esive_grpc.EsiveClient, app *tview.Application) *ChatView {
 	textView := tview.NewTextView()
 	textView.SetBorder(true)
 
@@ -43,7 +43,7 @@ func NewChatView(client models.IcecreamClient, app *tview.Application) *ChatView
 			if key == tcell.KeyEnter {
 				text := input.GetText()
 				go func() {
-					_, err := client.Say(context.Background(), &models.SayReq{Text: text})
+					_, err := client.Say(context.Background(), &esive_grpc.SayReq{Text: text})
 					if err != nil {
 						panic(err)
 					}

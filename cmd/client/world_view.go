@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/code-cell/esive/models"
+	esive_grpc "github.com/code-cell/esive/grpc"
 	tcell "github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -16,22 +16,22 @@ type WorldView struct {
 	playerID int64
 
 	app    *tview.Application
-	client models.IcecreamClient
+	client esive_grpc.EsiveClient
 	chat   tview.Primitive
 
 	mtx         sync.Mutex
-	Renderables map[int64]*models.Renderable
+	Renderables map[int64]*esive_grpc.Renderable
 	Visibility  int64
 	PlayerX     int64
 	PlayerY     int64
 }
 
-func NewWorldView(playerID int64, client models.IcecreamClient, app *tview.Application, chat tview.Primitive) *WorldView {
+func NewWorldView(playerID int64, client esive_grpc.EsiveClient, app *tview.Application, chat tview.Primitive) *WorldView {
 	box := tview.NewBox()
 	box.SetBorder(true).SetRect(0, 0, 30, 30)
 	return &WorldView{
 		Box:         box,
-		Renderables: map[int64]*models.Renderable{},
+		Renderables: map[int64]*esive_grpc.Renderable{},
 		playerID:    playerID,
 		Visibility:  15,
 		client:      client,
@@ -40,7 +40,7 @@ func NewWorldView(playerID int64, client models.IcecreamClient, app *tview.Appli
 	}
 }
 
-func (r *WorldView) AddRenderable(renderable *models.Renderable) {
+func (r *WorldView) AddRenderable(renderable *esive_grpc.Renderable) {
 	r.mtx.Lock()
 	r.Renderables[renderable.Id] = renderable
 	if renderable.Id == r.playerID {
@@ -51,7 +51,7 @@ func (r *WorldView) AddRenderable(renderable *models.Renderable) {
 	go r.app.Draw()
 }
 
-func (r *WorldView) SetPosition(id int64, position *models.Position) {
+func (r *WorldView) SetPosition(id int64, position *esive_grpc.Position) {
 	r.mtx.Lock()
 	r.Renderables[id].Position = position
 	if id == r.playerID {
@@ -91,7 +91,7 @@ func (r *WorldView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 	return r.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		switch event.Key() {
 		case tcell.KeyEnter:
-			_, err := r.client.Build(context.Background(), &models.BuildReq{})
+			_, err := r.client.Build(context.Background(), &esive_grpc.BuildReq{})
 			if err != nil {
 				panic(err)
 			}
@@ -101,30 +101,30 @@ func (r *WorldView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 				setFocus(r.chat)
 			}
 		case tcell.KeyCtrlT:
-			_, err := r.client.Say(context.Background(), &models.SayReq{Text: "FOO BAR"})
+			_, err := r.client.Say(context.Background(), &esive_grpc.SayReq{Text: "FOO BAR"})
 			if err != nil {
 				panic(err)
 			}
 		case tcell.KeyUp:
-			res, err := r.client.MoveUp(context.Background(), &models.MoveUpReq{})
+			res, err := r.client.MoveUp(context.Background(), &esive_grpc.MoveUpReq{})
 			if err != nil {
 				panic(err)
 			}
 			r.SetPosition(r.playerID, res.Position)
 		case tcell.KeyDown:
-			res, err := r.client.MoveDown(context.Background(), &models.MoveDownReq{})
+			res, err := r.client.MoveDown(context.Background(), &esive_grpc.MoveDownReq{})
 			if err != nil {
 				panic(err)
 			}
 			r.SetPosition(r.playerID, res.Position)
 		case tcell.KeyLeft:
-			res, err := r.client.MoveLeft(context.Background(), &models.MoveLeftReq{})
+			res, err := r.client.MoveLeft(context.Background(), &esive_grpc.MoveLeftReq{})
 			if err != nil {
 				panic(err)
 			}
 			r.SetPosition(r.playerID, res.Position)
 		case tcell.KeyRight:
-			res, err := r.client.MoveRight(context.Background(), &models.MoveRightReq{})
+			res, err := r.client.MoveRight(context.Background(), &esive_grpc.MoveRightReq{})
 			if err != nil {
 				panic(err)
 			}

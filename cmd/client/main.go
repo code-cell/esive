@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/code-cell/esive/models"
+	esive_grpc "github.com/code-cell/esive/grpc"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"google.golang.org/grpc"
@@ -25,8 +25,8 @@ func main() {
 	}
 	defer conn.Close()
 
-	client := models.NewIcecreamClient(conn)
-	joinRes, err := client.Join(context.Background(), &models.JoinReq{
+	client := esive_grpc.NewEsiveClient(conn)
+	joinRes, err := client.Join(context.Background(), &esive_grpc.JoinReq{
 		Name: name,
 	})
 	if err != nil {
@@ -34,12 +34,12 @@ func main() {
 	}
 	playerID := joinRes.PlayerId
 
-	visStream, err := client.VisibilityUpdates(context.Background(), &models.VisibilityUpdatesReq{})
+	visStream, err := client.VisibilityUpdates(context.Background(), &esive_grpc.VisibilityUpdatesReq{})
 	if err != nil {
 		panic(err)
 	}
 
-	chatStream, err := client.ChatUpdates(context.Background(), &models.ChatUpdatesReq{})
+	chatStream, err := client.ChatUpdates(context.Background(), &esive_grpc.ChatUpdatesReq{})
 	if err != nil {
 		panic(err)
 	}
@@ -55,9 +55,9 @@ func main() {
 				return
 			}
 			switch e.Action {
-			case models.VisibilityUpdatesRes_ADD:
+			case esive_grpc.VisibilityUpdatesRes_ADD:
 				gameView.WorldView.AddRenderable(e.Renderable)
-			case models.VisibilityUpdatesRes_REMOVE:
+			case esive_grpc.VisibilityUpdatesRes_REMOVE:
 				gameView.WorldView.DeleteRenderable(e.Renderable.Id)
 			}
 		}

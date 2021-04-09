@@ -9,7 +9,7 @@ import (
 	"net"
 
 	components "github.com/code-cell/esive/components"
-	"github.com/code-cell/esive/models"
+	esive_grpc "github.com/code-cell/esive/grpc"
 	"github.com/code-cell/esive/systems"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -32,7 +32,7 @@ type server struct {
 	players map[string]*PlayerData
 }
 
-func (s *server) move(ctx context.Context, offsetX, offsetY int64) (*models.Position, error) {
+func (s *server) move(ctx context.Context, offsetX, offsetY int64) (*esive_grpc.Position, error) {
 	playerID := ctx.Value("playerID").(string)
 	fmt.Printf("Player %v moved. Offset (%d, %d)\n", playerID, offsetX, offsetY)
 
@@ -48,53 +48,53 @@ func (s *server) move(ctx context.Context, offsetX, offsetY int64) (*models.Posi
 		panic(err)
 	}
 
-	return &models.Position{
+	return &esive_grpc.Position{
 		X: newPos.X,
 		Y: newPos.Y,
 	}, nil
 }
 
-func (s *server) MoveUp(ctx context.Context, _ *models.MoveUpReq) (*models.MoveUpRes, error) {
+func (s *server) MoveUp(ctx context.Context, _ *esive_grpc.MoveUpReq) (*esive_grpc.MoveUpRes, error) {
 	pos, err := s.move(ctx, 0, -1)
 	if err != nil {
 		panic(err)
 	}
-	return &models.MoveUpRes{
+	return &esive_grpc.MoveUpRes{
 		Position: pos,
 	}, nil
 }
 
-func (s *server) MoveDown(ctx context.Context, _ *models.MoveDownReq) (*models.MoveDownRes, error) {
+func (s *server) MoveDown(ctx context.Context, _ *esive_grpc.MoveDownReq) (*esive_grpc.MoveDownRes, error) {
 	pos, err := s.move(ctx, 0, 1)
 	if err != nil {
 		panic(err)
 	}
-	return &models.MoveDownRes{
+	return &esive_grpc.MoveDownRes{
 		Position: pos,
 	}, nil
 }
 
-func (s *server) MoveLeft(ctx context.Context, _ *models.MoveLeftReq) (*models.MoveLeftRes, error) {
+func (s *server) MoveLeft(ctx context.Context, _ *esive_grpc.MoveLeftReq) (*esive_grpc.MoveLeftRes, error) {
 	pos, err := s.move(ctx, -1, 0)
 	if err != nil {
 		panic(err)
 	}
-	return &models.MoveLeftRes{
+	return &esive_grpc.MoveLeftRes{
 		Position: pos,
 	}, nil
 }
 
-func (s *server) MoveRight(ctx context.Context, _ *models.MoveRightReq) (*models.MoveRightRes, error) {
+func (s *server) MoveRight(ctx context.Context, _ *esive_grpc.MoveRightReq) (*esive_grpc.MoveRightRes, error) {
 	pos, err := s.move(ctx, 1, 0)
 	if err != nil {
 		panic(err)
 	}
-	return &models.MoveRightRes{
+	return &esive_grpc.MoveRightRes{
 		Position: pos,
 	}, nil
 }
 
-func (s *server) Build(ctx context.Context, _ *models.BuildReq) (*models.BuildRes, error) {
+func (s *server) Build(ctx context.Context, _ *esive_grpc.BuildReq) (*esive_grpc.BuildRes, error) {
 	playerID := ctx.Value("playerID").(string)
 	fmt.Printf("Player %v build a dot\n", playerID)
 
@@ -117,10 +117,10 @@ func (s *server) Build(ctx context.Context, _ *models.BuildReq) (*models.BuildRe
 		panic(err)
 	}
 
-	return &models.BuildRes{}, nil
+	return &esive_grpc.BuildRes{}, nil
 }
 
-func (s *server) Say(ctx context.Context, req *models.SayReq) (*models.SayRes, error) {
+func (s *server) Say(ctx context.Context, req *esive_grpc.SayReq) (*esive_grpc.SayRes, error) {
 	playerID := ctx.Value("playerID").(string)
 	fmt.Printf("Player %v say: %v\n", playerID, req.Text)
 	playerData := s.players[playerID]
@@ -128,10 +128,10 @@ func (s *server) Say(ctx context.Context, req *models.SayReq) (*models.SayRes, e
 	if err != nil {
 		panic(err)
 	}
-	return &models.SayRes{}, nil
+	return &esive_grpc.SayRes{}, nil
 }
 
-func (s *server) Join(ctx context.Context, req *models.JoinReq) (*models.JoinRes, error) {
+func (s *server) Join(ctx context.Context, req *esive_grpc.JoinReq) (*esive_grpc.JoinRes, error) {
 	playerID := ctx.Value("playerID").(string)
 	fmt.Printf("Player %v joined\n", playerID)
 
@@ -167,26 +167,26 @@ func (s *server) Join(ctx context.Context, req *models.JoinReq) (*models.JoinRes
 		Name:    req.Name,
 	}
 
-	return &models.JoinRes{
+	return &esive_grpc.JoinRes{
 		PlayerId: int64(entity),
 	}, nil
 }
 
-func (s *server) ChatUpdates(req *models.ChatUpdatesReq, stream models.Icecream_ChatUpdatesServer) error {
+func (s *server) ChatUpdates(req *esive_grpc.ChatUpdatesReq, stream esive_grpc.Esive_ChatUpdatesServer) error {
 	ctx := stream.Context()
 	playerID := ctx.Value("playerID").(string)
 	fmt.Printf("Player %v subscribed to chat updates\n", playerID)
 	playerData := s.players[playerID]
 
 	for message := range playerData.Updater.Chats {
-		stream.Send(&models.ChatUpdatesRes{
+		stream.Send(&esive_grpc.ChatUpdatesRes{
 			Message: message,
 		})
 	}
 	return nil
 }
 
-func (s *server) VisibilityUpdates(req *models.VisibilityUpdatesReq, stream models.Icecream_VisibilityUpdatesServer) error {
+func (s *server) VisibilityUpdates(req *esive_grpc.VisibilityUpdatesReq, stream esive_grpc.Esive_VisibilityUpdatesServer) error {
 	ctx := stream.Context()
 	playerID := ctx.Value("playerID").(string)
 	fmt.Printf("Player %v subscribed to visibility updates\n", playerID)
@@ -198,13 +198,13 @@ func (s *server) VisibilityUpdates(req *models.VisibilityUpdatesReq, stream mode
 	}
 
 	for _, viewItem := range viewItems {
-		stream.Send(&models.VisibilityUpdatesRes{
-			Action: models.VisibilityUpdatesRes_ADD,
-			Renderable: &models.Renderable{
+		stream.Send(&esive_grpc.VisibilityUpdatesRes{
+			Action: esive_grpc.VisibilityUpdatesRes_ADD,
+			Renderable: &esive_grpc.Renderable{
 				Char:  viewItem.Char,
 				Color: viewItem.Color,
 				Id:    viewItem.ID,
-				Position: &models.Position{
+				Position: &esive_grpc.Position{
 					X: viewItem.X,
 					Y: viewItem.Y,
 				},
@@ -269,7 +269,7 @@ func grpcServer(registry *components.Registry, vision *systems.VisionSystem, mov
 		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
 		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
 	)
-	models.RegisterIcecreamServer(grpcServer, s)
+	esive_grpc.RegisterEsiveServer(grpcServer, s)
 	log.Println("Running...")
 	grpcServer.Serve(lis)
 }
