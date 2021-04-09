@@ -12,9 +12,11 @@ import (
 )
 
 var (
+	// This is configured when building releases to point to the test server.
 	defaultAddr = "localhost:9000"
-	addr        = flag.String("addr", defaultAddr, "Server address")
-	name        = flag.String("name", "", "Your name")
+
+	addr = flag.String("addr", defaultAddr, "Server address")
+	name = flag.String("name", "", "Your name. Optional.")
 )
 
 func main() {
