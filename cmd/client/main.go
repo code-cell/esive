@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	addr = flag.String("addr", "localhost:9000", "Server address")
-	name = flag.String("name", "", "Your name")
+	defaultAddr = "localhost:9000"
+	addr        = flag.String("addr", defaultAddr, "Server address")
+	name        = flag.String("name", "", "Your name")
 )
 
 func main() {

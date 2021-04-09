@@ -7,7 +7,7 @@ RUN go mod download
 
 COPY . ./
 
-RUN go build -o client -v ./cmd/client
+RUN go build -o client -v -ldflag "-X main.defaultAddr=104.196.192.37:9000" ./cmd/client
 
 FROM debian:buster-slim
 RUN set -x && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
