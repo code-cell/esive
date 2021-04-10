@@ -13,6 +13,7 @@ To try it using the test server just download the binary and run the `client` on
 - Players can join the server and move around. They have a visibility range of 15 units.
 - The world coordinates are [int64, int64] (pretty big)
 - Players can chat with nearby players.
+- Client side commands.
 - Uses [Jaeger](https://www.jaegertracing.io/)
 
 ## Running a server
@@ -32,6 +33,9 @@ Once it's configured, run the following image: `ghcr.io/code-cell/esive_server:<
 
 
 ## Running the client
+
+Press `t` to chat.
+In the chat, type `/help` to see the list of commands.
 
 ### Using the binary
 
