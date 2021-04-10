@@ -2,6 +2,7 @@ package systems
 
 import (
 	"context"
+	"strings"
 	"sync"
 
 	components "github.com/code-cell/esive/components"
@@ -22,45 +23,73 @@ type ChatListener interface {
 }
 
 type ChatSystem struct {
-	listeners    map[components.Entity]ChatListener
-	listenersMtx sync.Mutex
+	movementSystem *MovementSystem
+	listeners      map[components.Entity]ChatListener
+	listenersMtx   sync.Mutex
 }
 
-func NewChatSystem() *ChatSystem {
+func NewChatSystem(movementSystem *MovementSystem) *ChatSystem {
 	return &ChatSystem{
-		listeners: map[components.Entity]ChatListener{},
+		movementSystem: movementSystem,
+		listeners:      map[components.Entity]ChatListener{},
 	}
 }
 
 func (s *ChatSystem) Say(parentContext context.Context, entity components.Entity, text string) error {
+	if text == "" {
+		return nil
+	}
 	ctx, span := chatTracer.Start(parentContext, "chat.Say")
 	span.SetAttributes(
 		attribute.Int64("entity_id", int64(entity)),
 	)
 	defer span.End()
-
-	speakerPos := &components.Position{}
-	speaker := &components.Speaker{}
-	name := &components.Named{}
-	err := registry.LoadComponents(ctx, entity, speakerPos, speaker, name)
-	if err != nil {
-		return err
-	}
-
-	chatMessage := &ChatMessage{
-		From:     entity,
-		FromName: name.Name,
-		Message:  text,
-	}
-	entities, _, _, err := geo.FindInRange(ctx, speakerPos.X, speakerPos.Y, speaker.Range)
-	for _, entity := range entities {
+	if text[0] == '/' {
 		s.listenersMtx.Lock()
 		listener, ok := s.listeners[entity]
 		s.listenersMtx.Unlock()
-		if ok {
-			listener.HandleChatMessage(chatMessage)
+		if !ok {
+			// TODO: This shouldn't happen. Maybe log an error message?
+			return nil
+		}
+
+		parts := strings.Split(text[1:], " ")
+		cmd := parts[0]
+		for _, command := range ChatCommands {
+			if command.Command == cmd {
+				command.Action(ctx, entity, listener, parts[1:], s.movementSystem)
+				return nil
+			}
+		}
+		listener.HandleChatMessage(&ChatMessage{
+			FromName: CommandSender,
+			Message:  "Unknown command. Use `/help` to see the full list.",
+		})
+	} else {
+		speakerPos := &components.Position{}
+		speaker := &components.Speaker{}
+		name := &components.Named{}
+		err := registry.LoadComponents(ctx, entity, speakerPos, speaker, name)
+		if err != nil {
+			return err
+		}
+
+		chatMessage := &ChatMessage{
+			From:     entity,
+			FromName: name.Name,
+			Message:  text,
+		}
+		entities, _, _, err := geo.FindInRange(ctx, speakerPos.X, speakerPos.Y, speaker.Range)
+		for _, entity := range entities {
+			s.listenersMtx.Lock()
+			listener, ok := s.listeners[entity]
+			s.listenersMtx.Unlock()
+			if ok {
+				listener.HandleChatMessage(chatMessage)
+			}
 		}
 	}
+
 	return nil
 }
 

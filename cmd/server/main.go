@@ -54,7 +54,7 @@ func main() {
 
 	vision := systems.NewVisionSystem()
 	movement := systems.NewMovementSystem(vision)
-	chat := systems.NewChatSystem()
+	chat := systems.NewChatSystem(movement)
 
 	registry.OnCreateComponent(func(ctx context.Context, entity components.Entity, component proto.Message) {
 		t := component.ProtoReflect().Descriptor().FullName().Name()

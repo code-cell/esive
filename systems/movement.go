@@ -55,3 +55,20 @@ func (s *MovementSystem) Move(parentContext context.Context, entity components.E
 
 	return err
 }
+
+func (s *MovementSystem) Teleport(parentContext context.Context, entity components.Entity, x, y int64) error {
+	ctx, span := movementTracer.Start(parentContext, "movement.Teleport")
+	span.SetAttributes(
+		attribute.Int64("entity_id", int64(entity)),
+		attribute.Int64("x", x),
+		attribute.Int64("y", y),
+	)
+	defer span.End()
+
+	pos := &components.Position{}
+	err := registry.LoadComponents(ctx, entity, pos)
+	if err != nil {
+		panic(err)
+	}
+	return s.Move(ctx, entity, x-pos.X, y-pos.Y)
+}

@@ -42,12 +42,14 @@ func NewChatView(client esive_grpc.EsiveClient, app *tview.Application) *ChatVie
 		SetDoneFunc(func(key tcell.Key) {
 			if key == tcell.KeyEnter {
 				text := input.GetText()
-				go func() {
-					_, err := client.Say(context.Background(), &esive_grpc.SayReq{Text: text})
-					if err != nil {
-						panic(err)
-					}
-				}()
+				if text != "" {
+					go func() {
+						_, err := client.Say(context.Background(), &esive_grpc.SayReq{Text: text})
+						if err != nil {
+							panic(err)
+						}
+					}()
+				}
 			}
 			input.SetText("")
 			app.SetFocus(chatView.backView)
