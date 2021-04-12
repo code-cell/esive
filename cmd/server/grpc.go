@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"sync"
 
 	components "github.com/code-cell/esive/components"
 	esive_grpc "github.com/code-cell/esive/grpc"
@@ -29,14 +30,15 @@ type server struct {
 	movement *systems.MovementSystem
 	chat     *systems.ChatSystem
 
-	players map[string]*PlayerData
+	playersMtx sync.Mutex
+	players    map[string]*PlayerData
 }
 
 func (s *server) move(ctx context.Context, offsetX, offsetY int64) (*esive_grpc.Position, error) {
 	playerID := ctx.Value("playerID").(string)
 	fmt.Printf("Player %v moved. Offset (%d, %d)\n", playerID, offsetX, offsetY)
 
-	playerData := s.players[playerID]
+	playerData := s.playerData(ctx)
 	err := s.movement.Move(ctx, playerData.Entity, offsetX, offsetY)
 	if err != nil {
 		panic(err)
@@ -98,7 +100,7 @@ func (s *server) Build(ctx context.Context, _ *esive_grpc.BuildReq) (*esive_grpc
 	playerID := ctx.Value("playerID").(string)
 	fmt.Printf("Player %v build a dot\n", playerID)
 
-	playerData := s.players[playerID]
+	playerData := s.playerData(ctx)
 	pos := &components.Position{}
 	err := s.registry.LoadComponents(ctx, playerData.Entity, pos)
 	if err != nil {
@@ -123,7 +125,7 @@ func (s *server) Build(ctx context.Context, _ *esive_grpc.BuildReq) (*esive_grpc
 func (s *server) Say(ctx context.Context, req *esive_grpc.SayReq) (*esive_grpc.SayRes, error) {
 	playerID := ctx.Value("playerID").(string)
 	fmt.Printf("Player %v say: %v\n", playerID, req.Text)
-	playerData := s.players[playerID]
+	playerData := s.playerData(ctx)
 	err := s.chat.Say(ctx, playerData.Entity, req.Text)
 	if err != nil {
 		panic(err)
@@ -148,7 +150,7 @@ func (s *server) Join(ctx context.Context, req *esive_grpc.JoinReq) (*esive_grpc
 
 	err = s.registry.CreateComponents(ctx, entity,
 		&components.Named{Name: req.Name},
-		&components.Position{X: rand.Int63n(20) - 10, Y: rand.Int63n(20) - 10},
+		&components.Position{X: rand.Int63n(1000) - 500, Y: rand.Int63n(1000) - 500},
 		&components.Speaker{Range: float32(*viewRadius)},
 		&components.Render{Char: "@", Color: 0xFF0000},
 		&components.Looker{Range: float32(*viewRadius)},
@@ -176,7 +178,7 @@ func (s *server) ChatUpdates(req *esive_grpc.ChatUpdatesReq, stream esive_grpc.E
 	ctx := stream.Context()
 	playerID := ctx.Value("playerID").(string)
 	fmt.Printf("Player %v subscribed to chat updates\n", playerID)
-	playerData := s.players[playerID]
+	playerData := s.playerData(ctx)
 
 	for message := range playerData.Updater.Chats {
 		stream.Send(&esive_grpc.ChatUpdatesRes{
@@ -190,7 +192,7 @@ func (s *server) VisibilityUpdates(req *esive_grpc.VisibilityUpdatesReq, stream 
 	ctx := stream.Context()
 	playerID := ctx.Value("playerID").(string)
 	fmt.Printf("Player %v subscribed to visibility updates\n", playerID)
-	playerData := s.players[playerID]
+	playerData := s.playerData(ctx)
 
 	viewItems, err := s.vision.LookAll(ctx, playerData.Entity)
 	if err != nil {
@@ -245,11 +247,20 @@ func (h *serverStats) HandleConn(ctx context.Context, s stats.ConnStats) {
 			if err != nil {
 				panic(err)
 			}
+			h.server.playersMtx.Lock()
 			delete(h.server.players, playerID)
+			h.server.playersMtx.Unlock()
 		}
 
 		break
 	}
+}
+
+func (s *server) playerData(ctx context.Context) *PlayerData {
+	s.playersMtx.Lock()
+	defer s.playersMtx.Unlock()
+	playerID := ctx.Value("playerID").(string)
+	return s.players[playerID]
 }
 
 func grpcServer(registry *components.Registry, vision *systems.VisionSystem, movement *systems.MovementSystem, chat *systems.ChatSystem) {
