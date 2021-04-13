@@ -10,9 +10,10 @@ import (
 type Tick struct {
 	current int64
 
-	delay  time.Duration
-	ticker *time.Ticker
-	done   chan struct{}
+	delay        time.Duration
+	ticker       *time.Ticker
+	lastTickTime time.Time
+	done         chan struct{}
 
 	subscribersMtx sync.Mutex
 	subscribers    []func(context.Context, int64, time.Duration)
@@ -33,29 +34,34 @@ func (tick *Tick) Current() int64 {
 func (tick *Tick) Start() {
 	tick.ticker = time.NewTicker(tick.delay)
 
-	lastTickTime := time.Now()
+	tick.lastTickTime = time.Now()
 	for {
 		select {
 		case <-tick.done:
 			return
 		case <-tick.ticker.C:
-			current := atomic.AddInt64(&tick.current, 1)
-			now := time.Now()
-			dt := now.Sub(lastTickTime)
-			deadline := now.Add(tick.delay)
-
-			tick.subscribersMtx.Lock()
-			for _, sub := range tick.subscribers {
-				sub := sub
-				go func() {
-					ctx, cancel := context.WithDeadline(context.Background(), deadline)
-					defer cancel()
-					sub(ctx, current, dt)
-				}()
-			}
-			tick.subscribersMtx.Unlock()
+			tick.tickOnce()
 		}
 	}
+}
+
+func (tick *Tick) tickOnce() {
+	current := atomic.AddInt64(&tick.current, 1)
+	now := time.Now()
+	dt := now.Sub(tick.lastTickTime)
+	tick.lastTickTime = now
+	deadline := now.Add(tick.delay)
+
+	tick.subscribersMtx.Lock()
+	for _, sub := range tick.subscribers {
+		sub := sub
+		go func() {
+			ctx, cancel := context.WithDeadline(context.Background(), deadline)
+			defer cancel()
+			sub(ctx, current, dt)
+		}()
+	}
+	tick.subscribersMtx.Unlock()
 }
 
 func (tick *Tick) Stop() {
