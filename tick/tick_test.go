@@ -2,6 +2,7 @@ package tick
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -37,6 +38,15 @@ func TestTickSubscribers(t *testing.T) {
 	require.True(t, called)
 }
 
-func TestTickSubscribers_TakeTooLong(t *testing.T) {
-	// TODO: Test what happens when a subscriber takes to long to process. The ticker should still tick. We can assume the missbehaving call will not work because the context will be cancelled.
+func TestTickSubscribers_TakeTooLong_CallsAllTicksAnyway(t *testing.T) {
+	tick := NewTick(10 * time.Millisecond)
+	called := int32(0)
+	tick.AddSubscriber(func(ctx context.Context, tick int64, dt time.Duration) {
+		atomic.AddInt32(&called, 1)
+		time.Sleep(1000 * time.Millisecond)
+	})
+	go tick.Start()
+	time.Sleep(21 * time.Millisecond) // Force 2 ticks
+	tick.Stop()
+	require.Equal(t, int32(2), called)
 }

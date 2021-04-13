@@ -42,21 +42,18 @@ func (tick *Tick) Start() {
 			current := atomic.AddInt64(&tick.current, 1)
 			now := time.Now()
 			dt := now.Sub(lastTickTime)
-			ctx, cancel := context.WithTimeout(context.Background(), tick.delay)
+			deadline := now.Add(tick.delay)
 
 			tick.subscribersMtx.Lock()
-			wg := sync.WaitGroup{}
 			for _, sub := range tick.subscribers {
 				sub := sub
-				wg.Add(1)
 				go func() {
+					ctx, cancel := context.WithDeadline(context.Background(), deadline)
+					defer cancel()
 					sub(ctx, current, dt)
-					wg.Done()
 				}()
 			}
 			tick.subscribersMtx.Unlock()
-			wg.Wait()
-			cancel()
 		}
 	}
 }
