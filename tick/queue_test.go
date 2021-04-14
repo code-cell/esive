@@ -23,4 +23,5 @@ func TestQueue(t *testing.T) {
 	require.False(t, called)
 	tick.tickOnce()
 	require.Eventually(t, func() bool { return called }, 5*time.Millisecond, time.Millisecond)
+	require.Equal(t, 0, len(queue.actions))
 }
