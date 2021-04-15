@@ -1,0 +1,8 @@
+syntax = "proto3";
+package queue;
+
+option go_package = "github.com/code-cell/esive/queue";
+
+message Tick {
+  int64 tick = 1;
+}

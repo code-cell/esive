@@ -18,3 +18,8 @@ services:
       - 14268:14268
       - 14250:14250
       - 9411:9411
+  nats:
+    image: nats:2.2-alpine3.13
+    ports:
+      - 4222:4222
+    command: --js -p 4222 -V

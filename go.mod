@@ -8,6 +8,8 @@ require (
 	github.com/go-redis/redis/v8 v8.8.0
 	github.com/google/uuid v1.2.0
 	github.com/kr/pretty v0.2.0 // indirect
+	github.com/nats-io/jsm.go v0.0.22
+	github.com/nats-io/nats.go v1.10.1-0.20210228004050-ed743748acac
 	github.com/rivo/tview v0.0.0-20210312174852-ae9464cc3598
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
