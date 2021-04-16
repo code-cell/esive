@@ -49,7 +49,7 @@ func (q *Queue) HandleTick(ctx context.Context, tick int64) {
 }
 
 func (q *Queue) Consume(subject, consumer string, message proto.Message, cb func(proto.Message)) {
-	sub, err := q.nc.QueueSubscribeSync("tick", "systems:movement")
+	sub, err := q.nc.QueueSubscribeSync("tick", "systems")
 	if err != nil {
 		panic(err)
 	}
@@ -57,6 +57,9 @@ func (q *Queue) Consume(subject, consumer string, message proto.Message, cb func
 	for {
 		msg, err := sub.NextMsg(5 * time.Second)
 		if err != nil {
+			if err == nats.ErrTimeout {
+				continue
+			}
 			panic(err)
 		}
 

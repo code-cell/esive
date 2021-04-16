@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
+	"github.com/code-cell/esive/components"
 	"github.com/code-cell/esive/queue"
+	"github.com/code-cell/esive/systems"
 	"github.com/code-cell/esive/tick"
-	"google.golang.org/protobuf/proto"
 )
 
 func main() {
@@ -27,8 +27,7 @@ func main() {
 
 	go t.Start()
 
-	q.Consume("tick", "systems:movement", &queue.Tick{}, func(m proto.Message) {
-		t := m.(*queue.Tick)
-		fmt.Printf("Tick %d\n", t.Tick)
-	})
+	tickHandler := systems.NewTickHandler()
+	tickHandler.QueueMovement(2, components.Entity(123), 8, 5)
+	q.Consume("tick", "systems", &queue.Tick{}, tickHandler.OnTick)
 }
