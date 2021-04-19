@@ -106,25 +106,33 @@ func (r *WorldView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 				panic(err)
 			}
 		case tcell.KeyUp:
-			res, err := r.client.MoveUp(context.Background(), &esive_grpc.MoveUpReq{})
+			res, err := r.client.MoveUp(context.Background(), &esive_grpc.MoveReq{
+				Tick: 10,
+			})
 			if err != nil {
 				panic(err)
 			}
 			r.SetPosition(r.playerID, res.Position)
 		case tcell.KeyDown:
-			res, err := r.client.MoveDown(context.Background(), &esive_grpc.MoveDownReq{})
+			res, err := r.client.MoveDown(context.Background(), &esive_grpc.MoveReq{
+				Tick: 10,
+			})
 			if err != nil {
 				panic(err)
 			}
 			r.SetPosition(r.playerID, res.Position)
 		case tcell.KeyLeft:
-			res, err := r.client.MoveLeft(context.Background(), &esive_grpc.MoveLeftReq{})
+			res, err := r.client.MoveLeft(context.Background(), &esive_grpc.MoveReq{
+				Tick: 10,
+			})
 			if err != nil {
 				panic(err)
 			}
 			r.SetPosition(r.playerID, res.Position)
 		case tcell.KeyRight:
-			res, err := r.client.MoveRight(context.Background(), &esive_grpc.MoveRightReq{})
+			res, err := r.client.MoveRight(context.Background(), &esive_grpc.MoveReq{
+				Tick: 10,
+			})
 			if err != nil {
 				panic(err)
 			}

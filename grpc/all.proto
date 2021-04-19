@@ -5,10 +5,11 @@ option go_package = "github.com/code-cell/esive/grpc";
 package grpc;
 
 service Esive {
-  rpc MoveUp(MoveUpReq) returns (MoveUpRes) {}
-  rpc MoveDown(MoveDownReq) returns (MoveDownRes) {}
-  rpc MoveLeft(MoveLeftReq) returns (MoveLeftRes) {}
-  rpc MoveRight(MoveRightReq) returns (MoveRightRes) {}
+  rpc MoveUp(MoveReq) returns (MoveRes) {}
+  rpc MoveDown(MoveReq) returns (MoveRes) {}
+  rpc MoveLeft(MoveReq) returns (MoveRes) {}
+  rpc MoveRight(MoveReq) returns (MoveRes) {}
+
   rpc Build(BuildReq) returns (BuildRes) {}
   rpc VisibilityUpdates(VisibilityUpdatesReq) returns (stream VisibilityUpdatesRes) {}
   rpc ChatUpdates(ChatUpdatesReq) returns (stream ChatUpdatesRes) {}
@@ -32,22 +33,13 @@ message ChatUpdatesRes {
   ChatMessage message = 1;
 }
 
-message MoveUpReq {}
-message MoveUpRes {
+message MoveReq {
+  int64 tick = 1;
+}
+message MoveRes {
   Position position = 1;
 }
-message MoveDownReq {}
-message MoveDownRes {
-  Position position = 1;
-}
-message MoveLeftReq {}
-message MoveLeftRes {
-  Position position = 1;
-}
-message MoveRightReq {}
-message MoveRightRes {
-  Position position = 1;
-}
+
 message BuildReq {}
 message BuildRes {
   Position position = 1;

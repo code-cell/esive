@@ -21,7 +21,7 @@ func SetupNats(natsUrl string) error {
 		jsm.Subjects("tick"),
 	)
 
-	mgr.LoadOrNewConsumer("tick", "systems:movement",
+	mgr.LoadOrNewConsumer("tick", "systems",
 		jsm.AcknowledgeExplicit(),
 	)
 

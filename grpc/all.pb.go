@@ -248,14 +248,16 @@ func (x *ChatUpdatesRes) GetMessage() *ChatMessage {
 	return nil
 }
 
-type MoveUpReq struct {
+type MoveReq struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	Tick int64 `protobuf:"varint,1,opt,name=tick,proto3" json:"tick,omitempty"`
 }
 
-func (x *MoveUpReq) Reset() {
-	*x = MoveUpReq{}
+func (x *MoveReq) Reset() {
+	*x = MoveReq{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_all_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -263,13 +265,13 @@ func (x *MoveUpReq) Reset() {
 	}
 }
 
-func (x *MoveUpReq) String() string {
+func (x *MoveReq) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MoveUpReq) ProtoMessage() {}
+func (*MoveReq) ProtoMessage() {}
 
-func (x *MoveUpReq) ProtoReflect() protoreflect.Message {
+func (x *MoveReq) ProtoReflect() protoreflect.Message {
 	mi := &file_all_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -281,12 +283,19 @@ func (x *MoveUpReq) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MoveUpReq.ProtoReflect.Descriptor instead.
-func (*MoveUpReq) Descriptor() ([]byte, []int) {
+// Deprecated: Use MoveReq.ProtoReflect.Descriptor instead.
+func (*MoveReq) Descriptor() ([]byte, []int) {
 	return file_all_proto_rawDescGZIP(), []int{4}
 }
 
-type MoveUpRes struct {
+func (x *MoveReq) GetTick() int64 {
+	if x != nil {
+		return x.Tick
+	}
+	return 0
+}
+
+type MoveRes struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -294,8 +303,8 @@ type MoveUpRes struct {
 	Position *Position `protobuf:"bytes,1,opt,name=position,proto3" json:"position,omitempty"`
 }
 
-func (x *MoveUpRes) Reset() {
-	*x = MoveUpRes{}
+func (x *MoveRes) Reset() {
+	*x = MoveRes{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_all_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -303,13 +312,13 @@ func (x *MoveUpRes) Reset() {
 	}
 }
 
-func (x *MoveUpRes) String() string {
+func (x *MoveRes) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MoveUpRes) ProtoMessage() {}
+func (*MoveRes) ProtoMessage() {}
 
-func (x *MoveUpRes) ProtoReflect() protoreflect.Message {
+func (x *MoveRes) ProtoReflect() protoreflect.Message {
 	mi := &file_all_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -321,267 +330,12 @@ func (x *MoveUpRes) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MoveUpRes.ProtoReflect.Descriptor instead.
-func (*MoveUpRes) Descriptor() ([]byte, []int) {
+// Deprecated: Use MoveRes.ProtoReflect.Descriptor instead.
+func (*MoveRes) Descriptor() ([]byte, []int) {
 	return file_all_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *MoveUpRes) GetPosition() *Position {
-	if x != nil {
-		return x.Position
-	}
-	return nil
-}
-
-type MoveDownReq struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *MoveDownReq) Reset() {
-	*x = MoveDownReq{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_all_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MoveDownReq) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MoveDownReq) ProtoMessage() {}
-
-func (x *MoveDownReq) ProtoReflect() protoreflect.Message {
-	mi := &file_all_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MoveDownReq.ProtoReflect.Descriptor instead.
-func (*MoveDownReq) Descriptor() ([]byte, []int) {
-	return file_all_proto_rawDescGZIP(), []int{6}
-}
-
-type MoveDownRes struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Position *Position `protobuf:"bytes,1,opt,name=position,proto3" json:"position,omitempty"`
-}
-
-func (x *MoveDownRes) Reset() {
-	*x = MoveDownRes{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_all_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MoveDownRes) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MoveDownRes) ProtoMessage() {}
-
-func (x *MoveDownRes) ProtoReflect() protoreflect.Message {
-	mi := &file_all_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MoveDownRes.ProtoReflect.Descriptor instead.
-func (*MoveDownRes) Descriptor() ([]byte, []int) {
-	return file_all_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *MoveDownRes) GetPosition() *Position {
-	if x != nil {
-		return x.Position
-	}
-	return nil
-}
-
-type MoveLeftReq struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *MoveLeftReq) Reset() {
-	*x = MoveLeftReq{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_all_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MoveLeftReq) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MoveLeftReq) ProtoMessage() {}
-
-func (x *MoveLeftReq) ProtoReflect() protoreflect.Message {
-	mi := &file_all_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MoveLeftReq.ProtoReflect.Descriptor instead.
-func (*MoveLeftReq) Descriptor() ([]byte, []int) {
-	return file_all_proto_rawDescGZIP(), []int{8}
-}
-
-type MoveLeftRes struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Position *Position `protobuf:"bytes,1,opt,name=position,proto3" json:"position,omitempty"`
-}
-
-func (x *MoveLeftRes) Reset() {
-	*x = MoveLeftRes{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_all_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MoveLeftRes) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MoveLeftRes) ProtoMessage() {}
-
-func (x *MoveLeftRes) ProtoReflect() protoreflect.Message {
-	mi := &file_all_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MoveLeftRes.ProtoReflect.Descriptor instead.
-func (*MoveLeftRes) Descriptor() ([]byte, []int) {
-	return file_all_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *MoveLeftRes) GetPosition() *Position {
-	if x != nil {
-		return x.Position
-	}
-	return nil
-}
-
-type MoveRightReq struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *MoveRightReq) Reset() {
-	*x = MoveRightReq{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_all_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MoveRightReq) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MoveRightReq) ProtoMessage() {}
-
-func (x *MoveRightReq) ProtoReflect() protoreflect.Message {
-	mi := &file_all_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MoveRightReq.ProtoReflect.Descriptor instead.
-func (*MoveRightReq) Descriptor() ([]byte, []int) {
-	return file_all_proto_rawDescGZIP(), []int{10}
-}
-
-type MoveRightRes struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Position *Position `protobuf:"bytes,1,opt,name=position,proto3" json:"position,omitempty"`
-}
-
-func (x *MoveRightRes) Reset() {
-	*x = MoveRightRes{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_all_proto_msgTypes[11]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MoveRightRes) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MoveRightRes) ProtoMessage() {}
-
-func (x *MoveRightRes) ProtoReflect() protoreflect.Message {
-	mi := &file_all_proto_msgTypes[11]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MoveRightRes.ProtoReflect.Descriptor instead.
-func (*MoveRightRes) Descriptor() ([]byte, []int) {
-	return file_all_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *MoveRightRes) GetPosition() *Position {
+func (x *MoveRes) GetPosition() *Position {
 	if x != nil {
 		return x.Position
 	}
@@ -597,7 +351,7 @@ type BuildReq struct {
 func (x *BuildReq) Reset() {
 	*x = BuildReq{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_all_proto_msgTypes[12]
+		mi := &file_all_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -610,7 +364,7 @@ func (x *BuildReq) String() string {
 func (*BuildReq) ProtoMessage() {}
 
 func (x *BuildReq) ProtoReflect() protoreflect.Message {
-	mi := &file_all_proto_msgTypes[12]
+	mi := &file_all_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -623,7 +377,7 @@ func (x *BuildReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildReq.ProtoReflect.Descriptor instead.
 func (*BuildReq) Descriptor() ([]byte, []int) {
-	return file_all_proto_rawDescGZIP(), []int{12}
+	return file_all_proto_rawDescGZIP(), []int{6}
 }
 
 type BuildRes struct {
@@ -637,7 +391,7 @@ type BuildRes struct {
 func (x *BuildRes) Reset() {
 	*x = BuildRes{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_all_proto_msgTypes[13]
+		mi := &file_all_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -650,7 +404,7 @@ func (x *BuildRes) String() string {
 func (*BuildRes) ProtoMessage() {}
 
 func (x *BuildRes) ProtoReflect() protoreflect.Message {
-	mi := &file_all_proto_msgTypes[13]
+	mi := &file_all_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -663,7 +417,7 @@ func (x *BuildRes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildRes.ProtoReflect.Descriptor instead.
 func (*BuildRes) Descriptor() ([]byte, []int) {
-	return file_all_proto_rawDescGZIP(), []int{13}
+	return file_all_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *BuildRes) GetPosition() *Position {
@@ -684,7 +438,7 @@ type JoinReq struct {
 func (x *JoinReq) Reset() {
 	*x = JoinReq{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_all_proto_msgTypes[14]
+		mi := &file_all_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -697,7 +451,7 @@ func (x *JoinReq) String() string {
 func (*JoinReq) ProtoMessage() {}
 
 func (x *JoinReq) ProtoReflect() protoreflect.Message {
-	mi := &file_all_proto_msgTypes[14]
+	mi := &file_all_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -710,7 +464,7 @@ func (x *JoinReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinReq.ProtoReflect.Descriptor instead.
 func (*JoinReq) Descriptor() ([]byte, []int) {
-	return file_all_proto_rawDescGZIP(), []int{14}
+	return file_all_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *JoinReq) GetName() string {
@@ -731,7 +485,7 @@ type JoinRes struct {
 func (x *JoinRes) Reset() {
 	*x = JoinRes{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_all_proto_msgTypes[15]
+		mi := &file_all_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -744,7 +498,7 @@ func (x *JoinRes) String() string {
 func (*JoinRes) ProtoMessage() {}
 
 func (x *JoinRes) ProtoReflect() protoreflect.Message {
-	mi := &file_all_proto_msgTypes[15]
+	mi := &file_all_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -757,7 +511,7 @@ func (x *JoinRes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinRes.ProtoReflect.Descriptor instead.
 func (*JoinRes) Descriptor() ([]byte, []int) {
-	return file_all_proto_rawDescGZIP(), []int{15}
+	return file_all_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *JoinRes) GetPlayerId() int64 {
@@ -778,7 +532,7 @@ type SayReq struct {
 func (x *SayReq) Reset() {
 	*x = SayReq{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_all_proto_msgTypes[16]
+		mi := &file_all_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -791,7 +545,7 @@ func (x *SayReq) String() string {
 func (*SayReq) ProtoMessage() {}
 
 func (x *SayReq) ProtoReflect() protoreflect.Message {
-	mi := &file_all_proto_msgTypes[16]
+	mi := &file_all_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -804,7 +558,7 @@ func (x *SayReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SayReq.ProtoReflect.Descriptor instead.
 func (*SayReq) Descriptor() ([]byte, []int) {
-	return file_all_proto_rawDescGZIP(), []int{16}
+	return file_all_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *SayReq) GetText() string {
@@ -823,7 +577,7 @@ type SayRes struct {
 func (x *SayRes) Reset() {
 	*x = SayRes{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_all_proto_msgTypes[17]
+		mi := &file_all_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -836,7 +590,7 @@ func (x *SayRes) String() string {
 func (*SayRes) ProtoMessage() {}
 
 func (x *SayRes) ProtoReflect() protoreflect.Message {
-	mi := &file_all_proto_msgTypes[17]
+	mi := &file_all_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -849,7 +603,7 @@ func (x *SayRes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SayRes.ProtoReflect.Descriptor instead.
 func (*SayRes) Descriptor() ([]byte, []int) {
-	return file_all_proto_rawDescGZIP(), []int{17}
+	return file_all_proto_rawDescGZIP(), []int{11}
 }
 
 type Renderable struct {
@@ -866,7 +620,7 @@ type Renderable struct {
 func (x *Renderable) Reset() {
 	*x = Renderable{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_all_proto_msgTypes[18]
+		mi := &file_all_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -879,7 +633,7 @@ func (x *Renderable) String() string {
 func (*Renderable) ProtoMessage() {}
 
 func (x *Renderable) ProtoReflect() protoreflect.Message {
-	mi := &file_all_proto_msgTypes[18]
+	mi := &file_all_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -892,7 +646,7 @@ func (x *Renderable) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Renderable.ProtoReflect.Descriptor instead.
 func (*Renderable) Descriptor() ([]byte, []int) {
-	return file_all_proto_rawDescGZIP(), []int{18}
+	return file_all_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Renderable) GetId() int64 {
@@ -935,7 +689,7 @@ type ChatMessage struct {
 func (x *ChatMessage) Reset() {
 	*x = ChatMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_all_proto_msgTypes[19]
+		mi := &file_all_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -948,7 +702,7 @@ func (x *ChatMessage) String() string {
 func (*ChatMessage) ProtoMessage() {}
 
 func (x *ChatMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_all_proto_msgTypes[19]
+	mi := &file_all_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -961,7 +715,7 @@ func (x *ChatMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatMessage.ProtoReflect.Descriptor instead.
 func (*ChatMessage) Descriptor() ([]byte, []int) {
-	return file_all_proto_rawDescGZIP(), []int{19}
+	return file_all_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ChatMessage) GetFrom() string {
@@ -990,7 +744,7 @@ type Position struct {
 func (x *Position) Reset() {
 	*x = Position{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_all_proto_msgTypes[20]
+		mi := &file_all_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1003,7 +757,7 @@ func (x *Position) String() string {
 func (*Position) ProtoMessage() {}
 
 func (x *Position) ProtoReflect() protoreflect.Message {
-	mi := &file_all_proto_msgTypes[20]
+	mi := &file_all_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1016,7 +770,7 @@ func (x *Position) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Position.ProtoReflect.Descriptor instead.
 func (*Position) Descriptor() ([]byte, []int) {
-	return file_all_proto_rawDescGZIP(), []int{20}
+	return file_all_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *Position) GetX() int64 {
@@ -1054,22 +808,9 @@ var file_all_proto_rawDesc = []byte{
 	0x65, 0x73, 0x12, 0x2b, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x68, 0x61, 0x74, 0x4d,
 	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22,
-	0x0b, 0x0a, 0x09, 0x4d, 0x6f, 0x76, 0x65, 0x55, 0x70, 0x52, 0x65, 0x71, 0x22, 0x37, 0x0a, 0x09,
-	0x4d, 0x6f, 0x76, 0x65, 0x55, 0x70, 0x52, 0x65, 0x73, 0x12, 0x2a, 0x0a, 0x08, 0x70, 0x6f, 0x73,
-	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x67, 0x72,
-	0x70, 0x63, 0x2e, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x08, 0x70, 0x6f, 0x73,
-	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x0d, 0x0a, 0x0b, 0x4d, 0x6f, 0x76, 0x65, 0x44, 0x6f, 0x77,
-	0x6e, 0x52, 0x65, 0x71, 0x22, 0x39, 0x0a, 0x0b, 0x4d, 0x6f, 0x76, 0x65, 0x44, 0x6f, 0x77, 0x6e,
-	0x52, 0x65, 0x73, 0x12, 0x2a, 0x0a, 0x08, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x50, 0x6f, 0x73,
-	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x08, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x22,
-	0x0d, 0x0a, 0x0b, 0x4d, 0x6f, 0x76, 0x65, 0x4c, 0x65, 0x66, 0x74, 0x52, 0x65, 0x71, 0x22, 0x39,
-	0x0a, 0x0b, 0x4d, 0x6f, 0x76, 0x65, 0x4c, 0x65, 0x66, 0x74, 0x52, 0x65, 0x73, 0x12, 0x2a, 0x0a,
-	0x08, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x0e, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52,
-	0x08, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x0e, 0x0a, 0x0c, 0x4d, 0x6f, 0x76,
-	0x65, 0x52, 0x69, 0x67, 0x68, 0x74, 0x52, 0x65, 0x71, 0x22, 0x3a, 0x0a, 0x0c, 0x4d, 0x6f, 0x76,
-	0x65, 0x52, 0x69, 0x67, 0x68, 0x74, 0x52, 0x65, 0x73, 0x12, 0x2a, 0x0a, 0x08, 0x70, 0x6f, 0x73,
+	0x1d, 0x0a, 0x07, 0x4d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x71, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x69,
+	0x63, 0x6b, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x74, 0x69, 0x63, 0x6b, 0x22, 0x35,
+	0x0a, 0x07, 0x4d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x73, 0x12, 0x2a, 0x0a, 0x08, 0x70, 0x6f, 0x73,
 	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x67, 0x72,
 	0x70, 0x63, 0x2e, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x08, 0x70, 0x6f, 0x73,
 	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x0a, 0x0a, 0x08, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65,
@@ -1096,40 +837,38 @@ var file_all_proto_rawDesc = []byte{
 	0x12, 0x0a, 0x04, 0x74, 0x65, 0x78, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74,
 	0x65, 0x78, 0x74, 0x22, 0x26, 0x0a, 0x08, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x12,
 	0x0c, 0x0a, 0x01, 0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x01, 0x78, 0x12, 0x0c, 0x0a,
-	0x01, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x01, 0x79, 0x32, 0xdc, 0x03, 0x0a, 0x05,
-	0x45, 0x73, 0x69, 0x76, 0x65, 0x12, 0x2c, 0x0a, 0x06, 0x4d, 0x6f, 0x76, 0x65, 0x55, 0x70, 0x12,
-	0x0f, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x6f, 0x76, 0x65, 0x55, 0x70, 0x52, 0x65, 0x71,
-	0x1a, 0x0f, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x6f, 0x76, 0x65, 0x55, 0x70, 0x52, 0x65,
-	0x73, 0x22, 0x00, 0x12, 0x32, 0x0a, 0x08, 0x4d, 0x6f, 0x76, 0x65, 0x44, 0x6f, 0x77, 0x6e, 0x12,
-	0x11, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x6f, 0x76, 0x65, 0x44, 0x6f, 0x77, 0x6e, 0x52,
-	0x65, 0x71, 0x1a, 0x11, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x6f, 0x76, 0x65, 0x44, 0x6f,
-	0x77, 0x6e, 0x52, 0x65, 0x73, 0x22, 0x00, 0x12, 0x32, 0x0a, 0x08, 0x4d, 0x6f, 0x76, 0x65, 0x4c,
-	0x65, 0x66, 0x74, 0x12, 0x11, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x6f, 0x76, 0x65, 0x4c,
-	0x65, 0x66, 0x74, 0x52, 0x65, 0x71, 0x1a, 0x11, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x6f,
-	0x76, 0x65, 0x4c, 0x65, 0x66, 0x74, 0x52, 0x65, 0x73, 0x22, 0x00, 0x12, 0x35, 0x0a, 0x09, 0x4d,
-	0x6f, 0x76, 0x65, 0x52, 0x69, 0x67, 0x68, 0x74, 0x12, 0x12, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e,
-	0x4d, 0x6f, 0x76, 0x65, 0x52, 0x69, 0x67, 0x68, 0x74, 0x52, 0x65, 0x71, 0x1a, 0x12, 0x2e, 0x67,
-	0x72, 0x70, 0x63, 0x2e, 0x4d, 0x6f, 0x76, 0x65, 0x52, 0x69, 0x67, 0x68, 0x74, 0x52, 0x65, 0x73,
-	0x22, 0x00, 0x12, 0x29, 0x0a, 0x05, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x12, 0x0e, 0x2e, 0x67, 0x72,
-	0x70, 0x63, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x71, 0x1a, 0x0e, 0x2e, 0x67, 0x72,
-	0x70, 0x63, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x73, 0x22, 0x00, 0x12, 0x4f, 0x0a,
-	0x11, 0x56, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x55, 0x70, 0x64, 0x61, 0x74,
-	0x65, 0x73, 0x12, 0x1a, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x56, 0x69, 0x73, 0x69, 0x62, 0x69,
-	0x6c, 0x69, 0x74, 0x79, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x71, 0x1a, 0x1a,
-	0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x56, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79,
-	0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x73, 0x22, 0x00, 0x30, 0x01, 0x12, 0x3d,
-	0x0a, 0x0b, 0x43, 0x68, 0x61, 0x74, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x73, 0x12, 0x14, 0x2e,
-	0x67, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x68, 0x61, 0x74, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x73,
-	0x52, 0x65, 0x71, 0x1a, 0x14, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x68, 0x61, 0x74, 0x55,
-	0x70, 0x64, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x73, 0x22, 0x00, 0x30, 0x01, 0x12, 0x23, 0x0a,
-	0x03, 0x53, 0x61, 0x79, 0x12, 0x0c, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x53, 0x61, 0x79, 0x52,
-	0x65, 0x71, 0x1a, 0x0c, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x53, 0x61, 0x79, 0x52, 0x65, 0x73,
-	0x22, 0x00, 0x12, 0x26, 0x0a, 0x04, 0x4a, 0x6f, 0x69, 0x6e, 0x12, 0x0d, 0x2e, 0x67, 0x72, 0x70,
-	0x63, 0x2e, 0x4a, 0x6f, 0x69, 0x6e, 0x52, 0x65, 0x71, 0x1a, 0x0d, 0x2e, 0x67, 0x72, 0x70, 0x63,
-	0x2e, 0x4a, 0x6f, 0x69, 0x6e, 0x52, 0x65, 0x73, 0x22, 0x00, 0x42, 0x21, 0x5a, 0x1f, 0x67, 0x69,
-	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x64, 0x65, 0x2d, 0x63, 0x65,
-	0x6c, 0x6c, 0x2f, 0x65, 0x73, 0x69, 0x76, 0x65, 0x2f, 0x67, 0x72, 0x70, 0x63, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x01, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x01, 0x79, 0x32, 0xbe, 0x03, 0x0a, 0x05,
+	0x45, 0x73, 0x69, 0x76, 0x65, 0x12, 0x28, 0x0a, 0x06, 0x4d, 0x6f, 0x76, 0x65, 0x55, 0x70, 0x12,
+	0x0d, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x71, 0x1a, 0x0d,
+	0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x73, 0x22, 0x00, 0x12,
+	0x2a, 0x0a, 0x08, 0x4d, 0x6f, 0x76, 0x65, 0x44, 0x6f, 0x77, 0x6e, 0x12, 0x0d, 0x2e, 0x67, 0x72,
+	0x70, 0x63, 0x2e, 0x4d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x71, 0x1a, 0x0d, 0x2e, 0x67, 0x72, 0x70,
+	0x63, 0x2e, 0x4d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x73, 0x22, 0x00, 0x12, 0x2a, 0x0a, 0x08, 0x4d,
+	0x6f, 0x76, 0x65, 0x4c, 0x65, 0x66, 0x74, 0x12, 0x0d, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x4d,
+	0x6f, 0x76, 0x65, 0x52, 0x65, 0x71, 0x1a, 0x0d, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x6f,
+	0x76, 0x65, 0x52, 0x65, 0x73, 0x22, 0x00, 0x12, 0x2b, 0x0a, 0x09, 0x4d, 0x6f, 0x76, 0x65, 0x52,
+	0x69, 0x67, 0x68, 0x74, 0x12, 0x0d, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x6f, 0x76, 0x65,
+	0x52, 0x65, 0x71, 0x1a, 0x0d, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x6f, 0x76, 0x65, 0x52,
+	0x65, 0x73, 0x22, 0x00, 0x12, 0x29, 0x0a, 0x05, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x12, 0x0e, 0x2e,
+	0x67, 0x72, 0x70, 0x63, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x71, 0x1a, 0x0e, 0x2e,
+	0x67, 0x72, 0x70, 0x63, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x73, 0x22, 0x00, 0x12,
+	0x4f, 0x0a, 0x11, 0x56, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x55, 0x70, 0x64,
+	0x61, 0x74, 0x65, 0x73, 0x12, 0x1a, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x56, 0x69, 0x73, 0x69,
+	0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x71,
+	0x1a, 0x1a, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x56, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69,
+	0x74, 0x79, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x73, 0x22, 0x00, 0x30, 0x01,
+	0x12, 0x3d, 0x0a, 0x0b, 0x43, 0x68, 0x61, 0x74, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x73, 0x12,
+	0x14, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x68, 0x61, 0x74, 0x55, 0x70, 0x64, 0x61, 0x74,
+	0x65, 0x73, 0x52, 0x65, 0x71, 0x1a, 0x14, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x68, 0x61,
+	0x74, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x73, 0x22, 0x00, 0x30, 0x01, 0x12,
+	0x23, 0x0a, 0x03, 0x53, 0x61, 0x79, 0x12, 0x0c, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x53, 0x61,
+	0x79, 0x52, 0x65, 0x71, 0x1a, 0x0c, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x53, 0x61, 0x79, 0x52,
+	0x65, 0x73, 0x22, 0x00, 0x12, 0x26, 0x0a, 0x04, 0x4a, 0x6f, 0x69, 0x6e, 0x12, 0x0d, 0x2e, 0x67,
+	0x72, 0x70, 0x63, 0x2e, 0x4a, 0x6f, 0x69, 0x6e, 0x52, 0x65, 0x71, 0x1a, 0x0d, 0x2e, 0x67, 0x72,
+	0x70, 0x63, 0x2e, 0x4a, 0x6f, 0x69, 0x6e, 0x52, 0x65, 0x73, 0x22, 0x00, 0x42, 0x21, 0x5a, 0x1f,
+	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x64, 0x65, 0x2d,
+	0x63, 0x65, 0x6c, 0x6c, 0x2f, 0x65, 0x73, 0x69, 0x76, 0x65, 0x2f, 0x67, 0x72, 0x70, 0x63, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1145,64 +884,55 @@ func file_all_proto_rawDescGZIP() []byte {
 }
 
 var file_all_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_all_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_all_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_all_proto_goTypes = []interface{}{
 	(VisibilityUpdatesRes_Action)(0), // 0: grpc.VisibilityUpdatesRes.Action
 	(*VisibilityUpdatesReq)(nil),     // 1: grpc.VisibilityUpdatesReq
 	(*VisibilityUpdatesRes)(nil),     // 2: grpc.VisibilityUpdatesRes
 	(*ChatUpdatesReq)(nil),           // 3: grpc.ChatUpdatesReq
 	(*ChatUpdatesRes)(nil),           // 4: grpc.ChatUpdatesRes
-	(*MoveUpReq)(nil),                // 5: grpc.MoveUpReq
-	(*MoveUpRes)(nil),                // 6: grpc.MoveUpRes
-	(*MoveDownReq)(nil),              // 7: grpc.MoveDownReq
-	(*MoveDownRes)(nil),              // 8: grpc.MoveDownRes
-	(*MoveLeftReq)(nil),              // 9: grpc.MoveLeftReq
-	(*MoveLeftRes)(nil),              // 10: grpc.MoveLeftRes
-	(*MoveRightReq)(nil),             // 11: grpc.MoveRightReq
-	(*MoveRightRes)(nil),             // 12: grpc.MoveRightRes
-	(*BuildReq)(nil),                 // 13: grpc.BuildReq
-	(*BuildRes)(nil),                 // 14: grpc.BuildRes
-	(*JoinReq)(nil),                  // 15: grpc.JoinReq
-	(*JoinRes)(nil),                  // 16: grpc.JoinRes
-	(*SayReq)(nil),                   // 17: grpc.SayReq
-	(*SayRes)(nil),                   // 18: grpc.SayRes
-	(*Renderable)(nil),               // 19: grpc.Renderable
-	(*ChatMessage)(nil),              // 20: grpc.ChatMessage
-	(*Position)(nil),                 // 21: grpc.Position
+	(*MoveReq)(nil),                  // 5: grpc.MoveReq
+	(*MoveRes)(nil),                  // 6: grpc.MoveRes
+	(*BuildReq)(nil),                 // 7: grpc.BuildReq
+	(*BuildRes)(nil),                 // 8: grpc.BuildRes
+	(*JoinReq)(nil),                  // 9: grpc.JoinReq
+	(*JoinRes)(nil),                  // 10: grpc.JoinRes
+	(*SayReq)(nil),                   // 11: grpc.SayReq
+	(*SayRes)(nil),                   // 12: grpc.SayRes
+	(*Renderable)(nil),               // 13: grpc.Renderable
+	(*ChatMessage)(nil),              // 14: grpc.ChatMessage
+	(*Position)(nil),                 // 15: grpc.Position
 }
 var file_all_proto_depIdxs = []int32{
-	19, // 0: grpc.VisibilityUpdatesRes.renderable:type_name -> grpc.Renderable
+	13, // 0: grpc.VisibilityUpdatesRes.renderable:type_name -> grpc.Renderable
 	0,  // 1: grpc.VisibilityUpdatesRes.action:type_name -> grpc.VisibilityUpdatesRes.Action
-	20, // 2: grpc.ChatUpdatesRes.message:type_name -> grpc.ChatMessage
-	21, // 3: grpc.MoveUpRes.position:type_name -> grpc.Position
-	21, // 4: grpc.MoveDownRes.position:type_name -> grpc.Position
-	21, // 5: grpc.MoveLeftRes.position:type_name -> grpc.Position
-	21, // 6: grpc.MoveRightRes.position:type_name -> grpc.Position
-	21, // 7: grpc.BuildRes.position:type_name -> grpc.Position
-	21, // 8: grpc.Renderable.position:type_name -> grpc.Position
-	5,  // 9: grpc.Esive.MoveUp:input_type -> grpc.MoveUpReq
-	7,  // 10: grpc.Esive.MoveDown:input_type -> grpc.MoveDownReq
-	9,  // 11: grpc.Esive.MoveLeft:input_type -> grpc.MoveLeftReq
-	11, // 12: grpc.Esive.MoveRight:input_type -> grpc.MoveRightReq
-	13, // 13: grpc.Esive.Build:input_type -> grpc.BuildReq
-	1,  // 14: grpc.Esive.VisibilityUpdates:input_type -> grpc.VisibilityUpdatesReq
-	3,  // 15: grpc.Esive.ChatUpdates:input_type -> grpc.ChatUpdatesReq
-	17, // 16: grpc.Esive.Say:input_type -> grpc.SayReq
-	15, // 17: grpc.Esive.Join:input_type -> grpc.JoinReq
-	6,  // 18: grpc.Esive.MoveUp:output_type -> grpc.MoveUpRes
-	8,  // 19: grpc.Esive.MoveDown:output_type -> grpc.MoveDownRes
-	10, // 20: grpc.Esive.MoveLeft:output_type -> grpc.MoveLeftRes
-	12, // 21: grpc.Esive.MoveRight:output_type -> grpc.MoveRightRes
-	14, // 22: grpc.Esive.Build:output_type -> grpc.BuildRes
-	2,  // 23: grpc.Esive.VisibilityUpdates:output_type -> grpc.VisibilityUpdatesRes
-	4,  // 24: grpc.Esive.ChatUpdates:output_type -> grpc.ChatUpdatesRes
-	18, // 25: grpc.Esive.Say:output_type -> grpc.SayRes
-	16, // 26: grpc.Esive.Join:output_type -> grpc.JoinRes
-	18, // [18:27] is the sub-list for method output_type
-	9,  // [9:18] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	14, // 2: grpc.ChatUpdatesRes.message:type_name -> grpc.ChatMessage
+	15, // 3: grpc.MoveRes.position:type_name -> grpc.Position
+	15, // 4: grpc.BuildRes.position:type_name -> grpc.Position
+	15, // 5: grpc.Renderable.position:type_name -> grpc.Position
+	5,  // 6: grpc.Esive.MoveUp:input_type -> grpc.MoveReq
+	5,  // 7: grpc.Esive.MoveDown:input_type -> grpc.MoveReq
+	5,  // 8: grpc.Esive.MoveLeft:input_type -> grpc.MoveReq
+	5,  // 9: grpc.Esive.MoveRight:input_type -> grpc.MoveReq
+	7,  // 10: grpc.Esive.Build:input_type -> grpc.BuildReq
+	1,  // 11: grpc.Esive.VisibilityUpdates:input_type -> grpc.VisibilityUpdatesReq
+	3,  // 12: grpc.Esive.ChatUpdates:input_type -> grpc.ChatUpdatesReq
+	11, // 13: grpc.Esive.Say:input_type -> grpc.SayReq
+	9,  // 14: grpc.Esive.Join:input_type -> grpc.JoinReq
+	6,  // 15: grpc.Esive.MoveUp:output_type -> grpc.MoveRes
+	6,  // 16: grpc.Esive.MoveDown:output_type -> grpc.MoveRes
+	6,  // 17: grpc.Esive.MoveLeft:output_type -> grpc.MoveRes
+	6,  // 18: grpc.Esive.MoveRight:output_type -> grpc.MoveRes
+	8,  // 19: grpc.Esive.Build:output_type -> grpc.BuildRes
+	2,  // 20: grpc.Esive.VisibilityUpdates:output_type -> grpc.VisibilityUpdatesRes
+	4,  // 21: grpc.Esive.ChatUpdates:output_type -> grpc.ChatUpdatesRes
+	12, // 22: grpc.Esive.Say:output_type -> grpc.SayRes
+	10, // 23: grpc.Esive.Join:output_type -> grpc.JoinRes
+	15, // [15:24] is the sub-list for method output_type
+	6,  // [6:15] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_all_proto_init() }
@@ -1260,7 +990,7 @@ func file_all_proto_init() {
 			}
 		}
 		file_all_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MoveUpReq); i {
+			switch v := v.(*MoveReq); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1272,7 +1002,7 @@ func file_all_proto_init() {
 			}
 		}
 		file_all_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MoveUpRes); i {
+			switch v := v.(*MoveRes); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1284,78 +1014,6 @@ func file_all_proto_init() {
 			}
 		}
 		file_all_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MoveDownReq); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_all_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MoveDownRes); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_all_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MoveLeftReq); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_all_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MoveLeftRes); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_all_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MoveRightReq); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_all_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MoveRightRes); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_all_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BuildReq); i {
 			case 0:
 				return &v.state
@@ -1367,7 +1025,7 @@ func file_all_proto_init() {
 				return nil
 			}
 		}
-		file_all_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+		file_all_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BuildRes); i {
 			case 0:
 				return &v.state
@@ -1379,7 +1037,7 @@ func file_all_proto_init() {
 				return nil
 			}
 		}
-		file_all_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+		file_all_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*JoinReq); i {
 			case 0:
 				return &v.state
@@ -1391,7 +1049,7 @@ func file_all_proto_init() {
 				return nil
 			}
 		}
-		file_all_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+		file_all_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*JoinRes); i {
 			case 0:
 				return &v.state
@@ -1403,7 +1061,7 @@ func file_all_proto_init() {
 				return nil
 			}
 		}
-		file_all_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+		file_all_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SayReq); i {
 			case 0:
 				return &v.state
@@ -1415,7 +1073,7 @@ func file_all_proto_init() {
 				return nil
 			}
 		}
-		file_all_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+		file_all_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SayRes); i {
 			case 0:
 				return &v.state
@@ -1427,7 +1085,7 @@ func file_all_proto_init() {
 				return nil
 			}
 		}
-		file_all_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+		file_all_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Renderable); i {
 			case 0:
 				return &v.state
@@ -1439,7 +1097,7 @@ func file_all_proto_init() {
 				return nil
 			}
 		}
-		file_all_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+		file_all_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ChatMessage); i {
 			case 0:
 				return &v.state
@@ -1451,7 +1109,7 @@ func file_all_proto_init() {
 				return nil
 			}
 		}
-		file_all_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+		file_all_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Position); i {
 			case 0:
 				return &v.state
@@ -1470,7 +1128,7 @@ func file_all_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_all_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   21,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -1497,10 +1155,10 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type EsiveClient interface {
-	MoveUp(ctx context.Context, in *MoveUpReq, opts ...grpc.CallOption) (*MoveUpRes, error)
-	MoveDown(ctx context.Context, in *MoveDownReq, opts ...grpc.CallOption) (*MoveDownRes, error)
-	MoveLeft(ctx context.Context, in *MoveLeftReq, opts ...grpc.CallOption) (*MoveLeftRes, error)
-	MoveRight(ctx context.Context, in *MoveRightReq, opts ...grpc.CallOption) (*MoveRightRes, error)
+	MoveUp(ctx context.Context, in *MoveReq, opts ...grpc.CallOption) (*MoveRes, error)
+	MoveDown(ctx context.Context, in *MoveReq, opts ...grpc.CallOption) (*MoveRes, error)
+	MoveLeft(ctx context.Context, in *MoveReq, opts ...grpc.CallOption) (*MoveRes, error)
+	MoveRight(ctx context.Context, in *MoveReq, opts ...grpc.CallOption) (*MoveRes, error)
 	Build(ctx context.Context, in *BuildReq, opts ...grpc.CallOption) (*BuildRes, error)
 	VisibilityUpdates(ctx context.Context, in *VisibilityUpdatesReq, opts ...grpc.CallOption) (Esive_VisibilityUpdatesClient, error)
 	ChatUpdates(ctx context.Context, in *ChatUpdatesReq, opts ...grpc.CallOption) (Esive_ChatUpdatesClient, error)
@@ -1516,8 +1174,8 @@ func NewEsiveClient(cc grpc.ClientConnInterface) EsiveClient {
 	return &esiveClient{cc}
 }
 
-func (c *esiveClient) MoveUp(ctx context.Context, in *MoveUpReq, opts ...grpc.CallOption) (*MoveUpRes, error) {
-	out := new(MoveUpRes)
+func (c *esiveClient) MoveUp(ctx context.Context, in *MoveReq, opts ...grpc.CallOption) (*MoveRes, error) {
+	out := new(MoveRes)
 	err := c.cc.Invoke(ctx, "/grpc.Esive/MoveUp", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -1525,8 +1183,8 @@ func (c *esiveClient) MoveUp(ctx context.Context, in *MoveUpReq, opts ...grpc.Ca
 	return out, nil
 }
 
-func (c *esiveClient) MoveDown(ctx context.Context, in *MoveDownReq, opts ...grpc.CallOption) (*MoveDownRes, error) {
-	out := new(MoveDownRes)
+func (c *esiveClient) MoveDown(ctx context.Context, in *MoveReq, opts ...grpc.CallOption) (*MoveRes, error) {
+	out := new(MoveRes)
 	err := c.cc.Invoke(ctx, "/grpc.Esive/MoveDown", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -1534,8 +1192,8 @@ func (c *esiveClient) MoveDown(ctx context.Context, in *MoveDownReq, opts ...grp
 	return out, nil
 }
 
-func (c *esiveClient) MoveLeft(ctx context.Context, in *MoveLeftReq, opts ...grpc.CallOption) (*MoveLeftRes, error) {
-	out := new(MoveLeftRes)
+func (c *esiveClient) MoveLeft(ctx context.Context, in *MoveReq, opts ...grpc.CallOption) (*MoveRes, error) {
+	out := new(MoveRes)
 	err := c.cc.Invoke(ctx, "/grpc.Esive/MoveLeft", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -1543,8 +1201,8 @@ func (c *esiveClient) MoveLeft(ctx context.Context, in *MoveLeftReq, opts ...grp
 	return out, nil
 }
 
-func (c *esiveClient) MoveRight(ctx context.Context, in *MoveRightReq, opts ...grpc.CallOption) (*MoveRightRes, error) {
-	out := new(MoveRightRes)
+func (c *esiveClient) MoveRight(ctx context.Context, in *MoveReq, opts ...grpc.CallOption) (*MoveRes, error) {
+	out := new(MoveRes)
 	err := c.cc.Invoke(ctx, "/grpc.Esive/MoveRight", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -1645,10 +1303,10 @@ func (c *esiveClient) Join(ctx context.Context, in *JoinReq, opts ...grpc.CallOp
 
 // EsiveServer is the server API for Esive service.
 type EsiveServer interface {
-	MoveUp(context.Context, *MoveUpReq) (*MoveUpRes, error)
-	MoveDown(context.Context, *MoveDownReq) (*MoveDownRes, error)
-	MoveLeft(context.Context, *MoveLeftReq) (*MoveLeftRes, error)
-	MoveRight(context.Context, *MoveRightReq) (*MoveRightRes, error)
+	MoveUp(context.Context, *MoveReq) (*MoveRes, error)
+	MoveDown(context.Context, *MoveReq) (*MoveRes, error)
+	MoveLeft(context.Context, *MoveReq) (*MoveRes, error)
+	MoveRight(context.Context, *MoveReq) (*MoveRes, error)
 	Build(context.Context, *BuildReq) (*BuildRes, error)
 	VisibilityUpdates(*VisibilityUpdatesReq, Esive_VisibilityUpdatesServer) error
 	ChatUpdates(*ChatUpdatesReq, Esive_ChatUpdatesServer) error
@@ -1660,16 +1318,16 @@ type EsiveServer interface {
 type UnimplementedEsiveServer struct {
 }
 
-func (*UnimplementedEsiveServer) MoveUp(context.Context, *MoveUpReq) (*MoveUpRes, error) {
+func (*UnimplementedEsiveServer) MoveUp(context.Context, *MoveReq) (*MoveRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MoveUp not implemented")
 }
-func (*UnimplementedEsiveServer) MoveDown(context.Context, *MoveDownReq) (*MoveDownRes, error) {
+func (*UnimplementedEsiveServer) MoveDown(context.Context, *MoveReq) (*MoveRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MoveDown not implemented")
 }
-func (*UnimplementedEsiveServer) MoveLeft(context.Context, *MoveLeftReq) (*MoveLeftRes, error) {
+func (*UnimplementedEsiveServer) MoveLeft(context.Context, *MoveReq) (*MoveRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MoveLeft not implemented")
 }
-func (*UnimplementedEsiveServer) MoveRight(context.Context, *MoveRightReq) (*MoveRightRes, error) {
+func (*UnimplementedEsiveServer) MoveRight(context.Context, *MoveReq) (*MoveRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MoveRight not implemented")
 }
 func (*UnimplementedEsiveServer) Build(context.Context, *BuildReq) (*BuildRes, error) {
@@ -1693,7 +1351,7 @@ func RegisterEsiveServer(s *grpc.Server, srv EsiveServer) {
 }
 
 func _Esive_MoveUp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MoveUpReq)
+	in := new(MoveReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1705,13 +1363,13 @@ func _Esive_MoveUp_Handler(srv interface{}, ctx context.Context, dec func(interf
 		FullMethod: "/grpc.Esive/MoveUp",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EsiveServer).MoveUp(ctx, req.(*MoveUpReq))
+		return srv.(EsiveServer).MoveUp(ctx, req.(*MoveReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Esive_MoveDown_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MoveDownReq)
+	in := new(MoveReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1723,13 +1381,13 @@ func _Esive_MoveDown_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: "/grpc.Esive/MoveDown",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EsiveServer).MoveDown(ctx, req.(*MoveDownReq))
+		return srv.(EsiveServer).MoveDown(ctx, req.(*MoveReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Esive_MoveLeft_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MoveLeftReq)
+	in := new(MoveReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1741,13 +1399,13 @@ func _Esive_MoveLeft_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: "/grpc.Esive/MoveLeft",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EsiveServer).MoveLeft(ctx, req.(*MoveLeftReq))
+		return srv.(EsiveServer).MoveLeft(ctx, req.(*MoveReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Esive_MoveRight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MoveRightReq)
+	in := new(MoveReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1759,7 +1417,7 @@ func _Esive_MoveRight_Handler(srv interface{}, ctx context.Context, dec func(int
 		FullMethod: "/grpc.Esive/MoveRight",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EsiveServer).MoveRight(ctx, req.(*MoveRightReq))
+		return srv.(EsiveServer).MoveRight(ctx, req.(*MoveReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -49,7 +49,7 @@ func (q *Queue) HandleTick(ctx context.Context, tick int64) {
 }
 
 func (q *Queue) Consume(subject, consumer string, message proto.Message, cb func(proto.Message)) {
-	sub, err := q.nc.QueueSubscribeSync("tick", "systems")
+	sub, err := q.nc.QueueSubscribeSync(subject, consumer)
 	if err != nil {
 		panic(err)
 	}

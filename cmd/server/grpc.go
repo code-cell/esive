@@ -34,12 +34,12 @@ type server struct {
 	players    map[string]*PlayerData
 }
 
-func (s *server) move(ctx context.Context, offsetX, offsetY int64) (*esive_grpc.Position, error) {
+func (s *server) move(ctx context.Context, tick, offsetX, offsetY int64) (*esive_grpc.Position, error) {
 	playerID := ctx.Value("playerID").(string)
 	fmt.Printf("Player %v moved. Offset (%d, %d)\n", playerID, offsetX, offsetY)
 
 	playerData := s.playerData(ctx)
-	err := s.movement.Move(ctx, playerData.Entity, offsetX, offsetY)
+	err := s.movement.QueueMove(ctx, playerData.Entity, tick, offsetX, offsetY)
 	if err != nil {
 		panic(err)
 	}
@@ -56,42 +56,42 @@ func (s *server) move(ctx context.Context, offsetX, offsetY int64) (*esive_grpc.
 	}, nil
 }
 
-func (s *server) MoveUp(ctx context.Context, _ *esive_grpc.MoveUpReq) (*esive_grpc.MoveUpRes, error) {
-	pos, err := s.move(ctx, 0, -1)
+func (s *server) MoveUp(ctx context.Context, req *esive_grpc.MoveReq) (*esive_grpc.MoveRes, error) {
+	pos, err := s.move(ctx, req.Tick, 0, -1)
 	if err != nil {
 		panic(err)
 	}
-	return &esive_grpc.MoveUpRes{
+	return &esive_grpc.MoveRes{
 		Position: pos,
 	}, nil
 }
 
-func (s *server) MoveDown(ctx context.Context, _ *esive_grpc.MoveDownReq) (*esive_grpc.MoveDownRes, error) {
-	pos, err := s.move(ctx, 0, 1)
+func (s *server) MoveDown(ctx context.Context, req *esive_grpc.MoveReq) (*esive_grpc.MoveRes, error) {
+	pos, err := s.move(ctx, req.Tick, 0, 1)
 	if err != nil {
 		panic(err)
 	}
-	return &esive_grpc.MoveDownRes{
+	return &esive_grpc.MoveRes{
 		Position: pos,
 	}, nil
 }
 
-func (s *server) MoveLeft(ctx context.Context, _ *esive_grpc.MoveLeftReq) (*esive_grpc.MoveLeftRes, error) {
-	pos, err := s.move(ctx, -1, 0)
+func (s *server) MoveLeft(ctx context.Context, req *esive_grpc.MoveReq) (*esive_grpc.MoveRes, error) {
+	pos, err := s.move(ctx, req.Tick, -1, 0)
 	if err != nil {
 		panic(err)
 	}
-	return &esive_grpc.MoveLeftRes{
+	return &esive_grpc.MoveRes{
 		Position: pos,
 	}, nil
 }
 
-func (s *server) MoveRight(ctx context.Context, _ *esive_grpc.MoveRightReq) (*esive_grpc.MoveRightRes, error) {
-	pos, err := s.move(ctx, 1, 0)
+func (s *server) MoveRight(ctx context.Context, req *esive_grpc.MoveReq) (*esive_grpc.MoveRes, error) {
+	pos, err := s.move(ctx, req.Tick, 1, 0)
 	if err != nil {
 		panic(err)
 	}
-	return &esive_grpc.MoveRightRes{
+	return &esive_grpc.MoveRes{
 		Position: pos,
 	}, nil
 }

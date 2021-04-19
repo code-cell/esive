@@ -5,9 +5,12 @@ import (
 	"flag"
 	"log"
 	"math/rand"
+	"time"
 
 	"github.com/code-cell/esive/components"
+	"github.com/code-cell/esive/queue"
 	"github.com/code-cell/esive/systems"
+	"github.com/code-cell/esive/tick"
 	"github.com/go-redis/redis/extra/redisotel"
 	"github.com/go-redis/redis/v8"
 	"go.opentelemetry.io/otel/exporters/trace/jaeger"
@@ -25,6 +28,8 @@ var (
 	redisUsername       = flag.String("redis-username", "", "Redis username")
 	redisPassword       = flag.String("redis-password", "", "Redis password")
 	jeagerEndpoint      = flag.String("jaeger-endpoint", "http://localhost:14268/api/traces", "Jaeger collector endpoint")
+	natsURL             = flag.String("nats-url", "", "NATS server url")
+	tickDuration        = flag.Duration("tick", 1*time.Second, "Tick duration")
 )
 
 func main() {
@@ -55,6 +60,23 @@ func main() {
 	vision := systems.NewVisionSystem()
 	movement := systems.NewMovementSystem(vision)
 	chat := systems.NewChatSystem(movement)
+
+	err = queue.SetupNats(*natsURL)
+	if err != nil {
+		panic(err)
+	}
+
+	q := queue.NewQueue(*natsURL)
+	if err := q.Connect(); err != nil {
+		panic(err)
+	}
+
+	t := tick.NewTick(1 * time.Second)
+
+	t.AddSubscriber(q.HandleTick)
+
+	go q.Consume("tick", "systems", &queue.Tick{}, movement.OnTick)
+	go t.Start()
 
 	registry.OnCreateComponent(func(ctx context.Context, entity components.Entity, component proto.Message) {
 		t := component.ProtoReflect().Descriptor().FullName().Name()
