@@ -107,7 +107,7 @@ func main() {
 		}
 	}()
 
-	grpcServer(registry, vision, movement, chat)
+	grpcServer(registry, vision, movement, chat, t)
 }
 
 // initTracer creates a new trace provider instance and registers it as global trace provider.

@@ -7,14 +7,17 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"strconv"
 	"sync"
 
 	components "github.com/code-cell/esive/components"
 	esive_grpc "github.com/code-cell/esive/grpc"
 	"github.com/code-cell/esive/systems"
+	"github.com/code-cell/esive/tick"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/stats"
 )
 
@@ -29,6 +32,7 @@ type server struct {
 	vision   *systems.VisionSystem
 	movement *systems.MovementSystem
 	chat     *systems.ChatSystem
+	tick     *tick.Tick
 
 	playersMtx sync.Mutex
 	players    map[string]*PlayerData
@@ -263,7 +267,7 @@ func (s *server) playerData(ctx context.Context) *PlayerData {
 	return s.players[playerID]
 }
 
-func grpcServer(registry *components.Registry, vision *systems.VisionSystem, movement *systems.MovementSystem, chat *systems.ChatSystem) {
+func grpcServer(registry *components.Registry, vision *systems.VisionSystem, movement *systems.MovementSystem, chat *systems.ChatSystem, t *tick.Tick) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 9000))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -273,11 +277,18 @@ func grpcServer(registry *components.Registry, vision *systems.VisionSystem, mov
 		vision:   vision,
 		movement: movement,
 		chat:     chat,
+		tick:     t,
 		players:  map[string]*PlayerData{},
 	}
 	grpcServer := grpc.NewServer(
 		grpc.StatsHandler(&serverStats{s}),
-		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+		grpc.ChainUnaryInterceptor(
+			otelgrpc.UnaryServerInterceptor(),
+			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+				grpc.SetHeader(ctx, metadata.Pairs("tick", strconv.FormatInt(s.tick.Current()+5, 10)))
+				return handler(ctx, req)
+			},
+		),
 		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
 	)
 	esive_grpc.RegisterEsiveServer(grpcServer, s)

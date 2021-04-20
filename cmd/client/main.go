@@ -8,7 +8,9 @@ import (
 	esive_grpc "github.com/code-cell/esive/grpc"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -20,9 +22,23 @@ var (
 )
 
 func main() {
+	log, err := zap.NewDevelopment(zap.AddStacktrace(zap.ErrorLevel))
+	if err != nil {
+		panic(err)
+	}
 	flag.Parse()
 	name := askName()
-	conn, err := grpc.Dial(*addr, grpc.WithInsecure())
+	conn, err := grpc.Dial(*addr,
+		grpc.WithInsecure(),
+		grpc.WithChainUnaryInterceptor(func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+			var md metadata.MD
+			opts = append(opts, grpc.Header(&md))
+			err := invoker(ctx, method, req, reply, cc, opts...)
+			log.Debug("metadata", zap.Any("md", md))
+			return err
+		}),
+	)
+
 	if err != nil {
 		panic(err)
 	}
