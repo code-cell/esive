@@ -49,6 +49,7 @@ message JoinReq {
 }
 message JoinRes {
   int64 player_id = 1;
+  int32 tickMilliseconds = 2;
 }
 message SayReq {
   string text = 1;

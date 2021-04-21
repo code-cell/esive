@@ -174,7 +174,8 @@ func (s *server) Join(ctx context.Context, req *esive_grpc.JoinReq) (*esive_grpc
 	}
 
 	return &esive_grpc.JoinRes{
-		PlayerId: int64(entity),
+		PlayerId:         int64(entity),
+		TickMilliseconds: int32(s.tick.Delay.Milliseconds()),
 	}, nil
 }
 

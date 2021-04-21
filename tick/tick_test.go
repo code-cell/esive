@@ -10,18 +10,33 @@ import (
 )
 
 func TestTick(t *testing.T) {
-	tick := NewTick(100 * time.Millisecond)
+	tick := NewTick(0, 100*time.Millisecond)
 	require.Equal(t, int64(0), tick.Current())
 
 	go tick.Start()
-	time.Sleep(201 * time.Millisecond) // Force 2 ticks
+	time.Sleep(201 * time.Millisecond) // 2 ticks
 	tick.Stop()
 
 	require.Equal(t, int64(2), tick.Current())
 }
 
+func TestTick_Adjust(t *testing.T) {
+	tick := NewTick(0, 100*time.Millisecond)
+	require.Equal(t, int64(0), tick.Current())
+
+	tick.Adjust(10)
+	go tick.Start()
+
+	time.Sleep(20 * time.Millisecond) // move in time, but doesn't finish the current tick
+	require.Equal(t, int64(0), tick.Current())
+
+	time.Sleep(100 * time.Millisecond) // 1 tick
+	tick.Stop()
+	require.Equal(t, int64(11), tick.Current())
+}
+
 func TestTickSubscribers(t *testing.T) {
-	tick := NewTick(100 * time.Millisecond)
+	tick := NewTick(0, 100*time.Millisecond)
 	called := false
 	tick.AddSubscriber(func(ctx context.Context, tick int64) {
 		require.Equal(t, int64(1), tick)
@@ -31,13 +46,13 @@ func TestTickSubscribers(t *testing.T) {
 		called = true
 	})
 	go tick.Start()
-	time.Sleep(101 * time.Millisecond) // Force 1 tick
+	time.Sleep(101 * time.Millisecond) // 1 tick
 	tick.Stop()
 	require.True(t, called)
 }
 
 func TestTickSubscribers_TakeTooLong_CallsAllTicksAnyway(t *testing.T) {
-	tick := NewTick(100 * time.Millisecond)
+	tick := NewTick(0, 100*time.Millisecond)
 	called := int32(0)
 	tick.AddSubscriber(func(ctx context.Context, tick int64) {
 		atomic.AddInt32(&called, 1)

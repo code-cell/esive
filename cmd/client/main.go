@@ -4,8 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"strconv"
+	"time"
 
 	esive_grpc "github.com/code-cell/esive/grpc"
+	"github.com/code-cell/esive/tick"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"go.uber.org/zap"
@@ -27,6 +30,9 @@ func main() {
 		panic(err)
 	}
 	flag.Parse()
+
+	var t *tick.Tick
+
 	name := askName()
 	conn, err := grpc.Dial(*addr,
 		grpc.WithInsecure(),
@@ -34,7 +40,15 @@ func main() {
 			var md metadata.MD
 			opts = append(opts, grpc.Header(&md))
 			err := invoker(ctx, method, req, reply, cc, opts...)
-			log.Debug("metadata", zap.Any("md", md))
+			serverTick, found := getTickFromMD(md)
+			if found && t != nil {
+				log := log.With(zap.Int64("serverTick", serverTick), zap.Int64("clientTick", t.Current()))
+				if serverTick != t.Current() {
+					log.Warn("adjusting tick")
+					t.Adjust(serverTick)
+				}
+				log.Debug("received tick from the server")
+			}
 			return err
 		}),
 	)
@@ -45,13 +59,21 @@ func main() {
 	defer conn.Close()
 
 	client := esive_grpc.NewEsiveClient(conn)
+
+	var md metadata.MD
 	joinRes, err := client.Join(context.Background(), &esive_grpc.JoinReq{
 		Name: name,
-	})
+	}, grpc.Header(&md))
 	if err != nil {
 		panic(err)
 	}
 	playerID := joinRes.PlayerId
+	serverTick, found := getTickFromMD(md)
+	if !found {
+		panic("Didn't receive a tick from the server on the Join call.")
+	}
+	t = tick.NewTick(serverTick, time.Duration(joinRes.TickMilliseconds)*time.Millisecond)
+	go t.Start()
 
 	visStream, err := client.VisibilityUpdates(context.Background(), &esive_grpc.VisibilityUpdatesReq{})
 	if err != nil {
@@ -122,4 +144,16 @@ func askName() string {
 		panic(err)
 	}
 	return n
+}
+
+func getTickFromMD(md metadata.MD) (int64, bool) {
+	str, found := md["tick"]
+	if found && len(str) > 0 {
+		serverTick, err := strconv.ParseInt(str[0], 10, 64)
+		if err != nil {
+			return 0, false
+		}
+		return serverTick, true
+	}
+	return 0, false
 }

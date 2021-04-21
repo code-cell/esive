@@ -8,9 +8,11 @@ import (
 )
 
 type Tick struct {
-	current int64
+	Delay time.Duration
 
-	delay  time.Duration
+	current    int64
+	adjustment int64
+
 	ticker *time.Ticker
 	done   chan struct{}
 
@@ -18,9 +20,10 @@ type Tick struct {
 	subscribers    []func(context.Context, int64)
 }
 
-func NewTick(delay time.Duration) *Tick {
+func NewTick(current int64, delay time.Duration) *Tick {
 	return &Tick{
-		delay:       delay,
+		Delay:       delay,
+		current:     current,
 		done:        make(chan struct{}),
 		subscribers: make([]func(context.Context, int64), 0),
 	}
@@ -30,8 +33,13 @@ func (tick *Tick) Current() int64 {
 	return atomic.LoadInt64(&tick.current)
 }
 
+// Adjust makes the next tick be `newVal+1`. It doesn't change the current tick because other processes might need to be consistent with the tick number.
+func (tick *Tick) Adjust(newVal int64) {
+	atomic.SwapInt64(&tick.adjustment, newVal)
+}
+
 func (tick *Tick) Start() {
-	tick.ticker = time.NewTicker(tick.delay)
+	tick.ticker = time.NewTicker(tick.Delay)
 
 	for {
 		select {
@@ -44,9 +52,18 @@ func (tick *Tick) Start() {
 }
 
 func (tick *Tick) tickOnce() {
-	current := atomic.AddInt64(&tick.current, 1)
+	var next int64
+	adj := atomic.LoadInt64(&tick.adjustment)
+	if adj > 0 {
+		next = adj + 1
+		atomic.SwapInt64(&tick.current, next)
+		atomic.SwapInt64(&tick.adjustment, 0)
+	} else {
+		next = atomic.AddInt64(&tick.current, 1)
+	}
+
 	now := time.Now()
-	deadline := now.Add(tick.delay)
+	deadline := now.Add(tick.Delay)
 
 	tick.subscribersMtx.Lock()
 	for _, sub := range tick.subscribers {
@@ -54,7 +71,7 @@ func (tick *Tick) tickOnce() {
 		go func() {
 			ctx, cancel := context.WithDeadline(context.Background(), deadline)
 			defer cancel()
-			sub(ctx, current)
+			sub(ctx, next)
 		}()
 	}
 	tick.subscribersMtx.Unlock()
