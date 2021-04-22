@@ -71,7 +71,7 @@ func main() {
 		panic(err)
 	}
 
-	t := tick.NewTick(0, 1*time.Second)
+	t := tick.NewTick(0, 300*time.Millisecond)
 
 	t.AddSubscriber(q.HandleTick)
 

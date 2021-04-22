@@ -33,12 +33,8 @@ message ChatUpdatesRes {
   ChatMessage message = 1;
 }
 
-message MoveReq {
-  int64 tick = 1;
-}
-message MoveRes {
-  Position position = 1;
-}
+message MoveReq {}
+message MoveRes {}
 
 message BuildReq {}
 message BuildRes {

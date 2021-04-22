@@ -36,21 +36,31 @@ func main() {
 	name := askName()
 	conn, err := grpc.Dial(*addr,
 		grpc.WithInsecure(),
-		grpc.WithChainUnaryInterceptor(func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-			var md metadata.MD
-			opts = append(opts, grpc.Header(&md))
-			err := invoker(ctx, method, req, reply, cc, opts...)
-			serverTick, found := getTickFromMD(md)
-			if found && t != nil {
-				log := log.With(zap.Int64("serverTick", serverTick), zap.Int64("clientTick", t.Current()))
-				if serverTick != t.Current() {
-					log.Warn("adjusting tick")
-					t.Adjust(serverTick)
+		grpc.WithChainUnaryInterceptor(
+			// Set client tick in the request header
+			func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+				if t != nil {
+					ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("tick", strconv.FormatInt(t.Current(), 10)))
 				}
-				log.Debug("received tick from the server")
-			}
-			return err
-		}),
+				return invoker(ctx, method, req, reply, cc, opts...)
+			},
+			// Parse server tick and adjust to it
+			func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+				var md metadata.MD
+				opts = append(opts, grpc.Header(&md))
+				err := invoker(ctx, method, req, reply, cc, opts...)
+				serverTick, found := getTickFromMD(md)
+				if found && t != nil {
+					log := log.With(zap.Int64("serverTick", serverTick), zap.Int64("clientTick", t.Current()))
+					if serverTick != t.Current() {
+						log.Warn("adjusting tick")
+						t.Adjust(serverTick)
+					}
+					log.Debug("received tick from the server")
+				}
+				return err
+			},
+		),
 	)
 
 	if err != nil {

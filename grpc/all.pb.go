@@ -252,8 +252,6 @@ type MoveReq struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	Tick int64 `protobuf:"varint,1,opt,name=tick,proto3" json:"tick,omitempty"`
 }
 
 func (x *MoveReq) Reset() {
@@ -288,19 +286,10 @@ func (*MoveReq) Descriptor() ([]byte, []int) {
 	return file_all_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *MoveReq) GetTick() int64 {
-	if x != nil {
-		return x.Tick
-	}
-	return 0
-}
-
 type MoveRes struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	Position *Position `protobuf:"bytes,1,opt,name=position,proto3" json:"position,omitempty"`
 }
 
 func (x *MoveRes) Reset() {
@@ -333,13 +322,6 @@ func (x *MoveRes) ProtoReflect() protoreflect.Message {
 // Deprecated: Use MoveRes.ProtoReflect.Descriptor instead.
 func (*MoveRes) Descriptor() ([]byte, []int) {
 	return file_all_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *MoveRes) GetPosition() *Position {
-	if x != nil {
-		return x.Position
-	}
-	return nil
 }
 
 type BuildReq struct {
@@ -816,12 +798,8 @@ var file_all_proto_rawDesc = []byte{
 	0x65, 0x73, 0x12, 0x2b, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x68, 0x61, 0x74, 0x4d,
 	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22,
-	0x1d, 0x0a, 0x07, 0x4d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x71, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x69,
-	0x63, 0x6b, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x74, 0x69, 0x63, 0x6b, 0x22, 0x35,
-	0x0a, 0x07, 0x4d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x73, 0x12, 0x2a, 0x0a, 0x08, 0x70, 0x6f, 0x73,
-	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x67, 0x72,
-	0x70, 0x63, 0x2e, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x08, 0x70, 0x6f, 0x73,
-	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x0a, 0x0a, 0x08, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65,
+	0x09, 0x0a, 0x07, 0x4d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x71, 0x22, 0x09, 0x0a, 0x07, 0x4d, 0x6f,
+	0x76, 0x65, 0x52, 0x65, 0x73, 0x22, 0x0a, 0x0a, 0x08, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65,
 	0x71, 0x22, 0x36, 0x0a, 0x08, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x73, 0x12, 0x2a, 0x0a,
 	0x08, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
 	0x0e, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52,
@@ -918,32 +896,31 @@ var file_all_proto_depIdxs = []int32{
 	13, // 0: grpc.VisibilityUpdatesRes.renderable:type_name -> grpc.Renderable
 	0,  // 1: grpc.VisibilityUpdatesRes.action:type_name -> grpc.VisibilityUpdatesRes.Action
 	14, // 2: grpc.ChatUpdatesRes.message:type_name -> grpc.ChatMessage
-	15, // 3: grpc.MoveRes.position:type_name -> grpc.Position
-	15, // 4: grpc.BuildRes.position:type_name -> grpc.Position
-	15, // 5: grpc.Renderable.position:type_name -> grpc.Position
-	5,  // 6: grpc.Esive.MoveUp:input_type -> grpc.MoveReq
-	5,  // 7: grpc.Esive.MoveDown:input_type -> grpc.MoveReq
-	5,  // 8: grpc.Esive.MoveLeft:input_type -> grpc.MoveReq
-	5,  // 9: grpc.Esive.MoveRight:input_type -> grpc.MoveReq
-	7,  // 10: grpc.Esive.Build:input_type -> grpc.BuildReq
-	1,  // 11: grpc.Esive.VisibilityUpdates:input_type -> grpc.VisibilityUpdatesReq
-	3,  // 12: grpc.Esive.ChatUpdates:input_type -> grpc.ChatUpdatesReq
-	11, // 13: grpc.Esive.Say:input_type -> grpc.SayReq
-	9,  // 14: grpc.Esive.Join:input_type -> grpc.JoinReq
-	6,  // 15: grpc.Esive.MoveUp:output_type -> grpc.MoveRes
-	6,  // 16: grpc.Esive.MoveDown:output_type -> grpc.MoveRes
-	6,  // 17: grpc.Esive.MoveLeft:output_type -> grpc.MoveRes
-	6,  // 18: grpc.Esive.MoveRight:output_type -> grpc.MoveRes
-	8,  // 19: grpc.Esive.Build:output_type -> grpc.BuildRes
-	2,  // 20: grpc.Esive.VisibilityUpdates:output_type -> grpc.VisibilityUpdatesRes
-	4,  // 21: grpc.Esive.ChatUpdates:output_type -> grpc.ChatUpdatesRes
-	12, // 22: grpc.Esive.Say:output_type -> grpc.SayRes
-	10, // 23: grpc.Esive.Join:output_type -> grpc.JoinRes
-	15, // [15:24] is the sub-list for method output_type
-	6,  // [6:15] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	15, // 3: grpc.BuildRes.position:type_name -> grpc.Position
+	15, // 4: grpc.Renderable.position:type_name -> grpc.Position
+	5,  // 5: grpc.Esive.MoveUp:input_type -> grpc.MoveReq
+	5,  // 6: grpc.Esive.MoveDown:input_type -> grpc.MoveReq
+	5,  // 7: grpc.Esive.MoveLeft:input_type -> grpc.MoveReq
+	5,  // 8: grpc.Esive.MoveRight:input_type -> grpc.MoveReq
+	7,  // 9: grpc.Esive.Build:input_type -> grpc.BuildReq
+	1,  // 10: grpc.Esive.VisibilityUpdates:input_type -> grpc.VisibilityUpdatesReq
+	3,  // 11: grpc.Esive.ChatUpdates:input_type -> grpc.ChatUpdatesReq
+	11, // 12: grpc.Esive.Say:input_type -> grpc.SayReq
+	9,  // 13: grpc.Esive.Join:input_type -> grpc.JoinReq
+	6,  // 14: grpc.Esive.MoveUp:output_type -> grpc.MoveRes
+	6,  // 15: grpc.Esive.MoveDown:output_type -> grpc.MoveRes
+	6,  // 16: grpc.Esive.MoveLeft:output_type -> grpc.MoveRes
+	6,  // 17: grpc.Esive.MoveRight:output_type -> grpc.MoveRes
+	8,  // 18: grpc.Esive.Build:output_type -> grpc.BuildRes
+	2,  // 19: grpc.Esive.VisibilityUpdates:output_type -> grpc.VisibilityUpdatesRes
+	4,  // 20: grpc.Esive.ChatUpdates:output_type -> grpc.ChatUpdatesRes
+	12, // 21: grpc.Esive.Say:output_type -> grpc.SayRes
+	10, // 22: grpc.Esive.Join:output_type -> grpc.JoinRes
+	14, // [14:23] is the sub-list for method output_type
+	5,  // [5:14] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_all_proto_init() }

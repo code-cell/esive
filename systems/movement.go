@@ -79,11 +79,11 @@ func (s *MovementSystem) doMove(parentContext context.Context, entity components
 	pos.X += offsetX
 	pos.Y += offsetY
 
+	registry.UpdateComponents(ctx, entity, pos)
 	err = s.visionSystem.HandleMovement(ctx, entity, oldPos, newPos)
 	if err != nil {
 		panic(err)
 	}
-	registry.UpdateComponents(ctx, entity, pos)
 	geo.OnMovePosition(ctx, entity, oldPos, newPos)
 
 	return err

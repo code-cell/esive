@@ -38,66 +38,75 @@ type server struct {
 	players    map[string]*PlayerData
 }
 
-func (s *server) move(ctx context.Context, tick, offsetX, offsetY int64) (*esive_grpc.Position, error) {
+func (s *server) move(ctx context.Context, tick, offsetX, offsetY int64) error {
 	playerID := ctx.Value("playerID").(string)
 	fmt.Printf("Player %v moved. Offset (%d, %d)\n", playerID, offsetX, offsetY)
 
 	playerData := s.playerData(ctx)
-	err := s.movement.QueueMove(ctx, playerData.Entity, tick, offsetX, offsetY)
-	if err != nil {
-		panic(err)
-	}
+	return s.movement.QueueMove(ctx, playerData.Entity, tick, offsetX, offsetY)
+}
 
-	newPos := &components.Position{}
-	err = s.registry.LoadComponents(ctx, playerData.Entity, newPos)
-	if err != nil {
-		panic(err)
+func getTickFromCtx(ctx context.Context) (int64, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return 0, errors.New("The context doesn't contain any metadata")
 	}
-
-	return &esive_grpc.Position{
-		X: newPos.X,
-		Y: newPos.Y,
-	}, nil
+	tick := md["tick"]
+	if len(tick) != 1 {
+		return 0, errors.New("No tick found in the context")
+	}
+	return strconv.ParseInt(tick[0], 10, 64)
 }
 
 func (s *server) MoveUp(ctx context.Context, req *esive_grpc.MoveReq) (*esive_grpc.MoveRes, error) {
-	pos, err := s.move(ctx, req.Tick, 0, -1)
+	tick, err := getTickFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	err = s.move(ctx, tick, 0, -1)
 	if err != nil {
 		panic(err)
 	}
-	return &esive_grpc.MoveRes{
-		Position: pos,
-	}, nil
+	return &esive_grpc.MoveRes{}, nil
 }
 
 func (s *server) MoveDown(ctx context.Context, req *esive_grpc.MoveReq) (*esive_grpc.MoveRes, error) {
-	pos, err := s.move(ctx, req.Tick, 0, 1)
+	tick, err := getTickFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.move(ctx, tick, 0, 1)
 	if err != nil {
 		panic(err)
 	}
-	return &esive_grpc.MoveRes{
-		Position: pos,
-	}, nil
+	return &esive_grpc.MoveRes{}, nil
 }
 
 func (s *server) MoveLeft(ctx context.Context, req *esive_grpc.MoveReq) (*esive_grpc.MoveRes, error) {
-	pos, err := s.move(ctx, req.Tick, -1, 0)
+	tick, err := getTickFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.move(ctx, tick, -1, 0)
 	if err != nil {
 		panic(err)
 	}
-	return &esive_grpc.MoveRes{
-		Position: pos,
-	}, nil
+	return &esive_grpc.MoveRes{}, nil
 }
 
 func (s *server) MoveRight(ctx context.Context, req *esive_grpc.MoveReq) (*esive_grpc.MoveRes, error) {
-	pos, err := s.move(ctx, req.Tick, 1, 0)
+	tick, err := getTickFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.move(ctx, tick, 1, 0)
 	if err != nil {
 		panic(err)
 	}
-	return &esive_grpc.MoveRes{
-		Position: pos,
-	}, nil
+	return &esive_grpc.MoveRes{}, nil
 }
 
 func (s *server) Build(ctx context.Context, _ *esive_grpc.BuildReq) (*esive_grpc.BuildRes, error) {
@@ -154,7 +163,8 @@ func (s *server) Join(ctx context.Context, req *esive_grpc.JoinReq) (*esive_grpc
 
 	err = s.registry.CreateComponents(ctx, entity,
 		&components.Named{Name: req.Name},
-		&components.Position{X: rand.Int63n(1000) - 500, Y: rand.Int63n(1000) - 500},
+		// &components.Position{X: rand.Int63n(1000) - 500, Y: rand.Int63n(1000) - 500},
+		&components.Position{X: rand.Int63n(10) - 5, Y: rand.Int63n(10) - 5},
 		&components.Speaker{Range: float32(*viewRadius)},
 		&components.Render{Char: "@", Color: 0xFF0000},
 		&components.Looker{Range: float32(*viewRadius)},
@@ -286,7 +296,7 @@ func grpcServer(registry *components.Registry, vision *systems.VisionSystem, mov
 		grpc.ChainUnaryInterceptor(
 			otelgrpc.UnaryServerInterceptor(),
 			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-				grpc.SetHeader(ctx, metadata.Pairs("tick", strconv.FormatInt(s.tick.Current()+5, 10)))
+				grpc.SetHeader(ctx, metadata.Pairs("tick", strconv.FormatInt(s.tick.Current()+1, 10)))
 				return handler(ctx, req)
 			},
 		),

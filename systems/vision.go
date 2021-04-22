@@ -95,13 +95,14 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, entity comp
 		return err
 	}
 
-	lookers, extras, err := registry.EntitiesWithComponentType(ctx, &components.Looker{}, &components.Looker{}, &components.Position{})
+	lookers, extras, err := registry.EntitiesWithComponentType(ctx, &components.Looker{}, &components.Looker{}, &components.Position{}, &components.Render{})
 	if err != nil {
 		return err
 	}
 	for i, lookerE := range lookers {
 		looker := extras[i][0].(*components.Looker)
 		lookerPos := extras[i][1].(*components.Position)
+		lookerRender := extras[i][2].(*components.Render)
 
 		s.updatersMtx.Lock()
 		updater, found := s.updaters[lookerE]
@@ -126,6 +127,15 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, entity comp
 				})
 			}
 		} else {
+			// Send its own update in case it went offsync.
+			updater.HandleVisibilityUpdate(&VisionSystemLookItem{
+				ID:    int64(entity),
+				X:     lookerPos.X,
+				Y:     lookerPos.Y,
+				Char:  lookerRender.Char,
+				Color: lookerRender.Color,
+			})
+
 			oldEntities, _, _, err := geo.FindInRange(ctx, oldPos.X, oldPos.Y, looker.Range)
 			if err != nil {
 				return err

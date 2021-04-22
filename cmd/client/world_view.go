@@ -62,6 +62,12 @@ func (r *WorldView) SetPosition(id int64, position *esive_grpc.Position) {
 	go r.app.Draw()
 }
 
+func (r *WorldView) GetPosition(id int64) *esive_grpc.Position {
+	r.mtx.Lock()
+	defer r.mtx.Unlock()
+	return r.Renderables[id].Position
+}
+
 func (r *WorldView) DeleteRenderable(id int64) {
 	r.mtx.Lock()
 	delete(r.Renderables, id)
@@ -106,37 +112,45 @@ func (r *WorldView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 				panic(err)
 			}
 		case tcell.KeyUp:
-			res, err := r.client.MoveUp(context.Background(), &esive_grpc.MoveReq{
-				Tick: 10,
-			})
+			_, err := r.client.MoveUp(context.Background(), &esive_grpc.MoveReq{})
 			if err != nil {
 				panic(err)
 			}
-			r.SetPosition(r.playerID, res.Position)
+			pos := r.GetPosition(r.playerID)
+			r.SetPosition(r.playerID, &esive_grpc.Position{
+				X: pos.X,
+				Y: pos.Y - 1,
+			})
 		case tcell.KeyDown:
-			res, err := r.client.MoveDown(context.Background(), &esive_grpc.MoveReq{
-				Tick: 10,
-			})
+			_, err := r.client.MoveDown(context.Background(), &esive_grpc.MoveReq{})
 			if err != nil {
 				panic(err)
 			}
-			r.SetPosition(r.playerID, res.Position)
+			pos := r.GetPosition(r.playerID)
+			r.SetPosition(r.playerID, &esive_grpc.Position{
+				X: pos.X,
+				Y: pos.Y + 1,
+			})
 		case tcell.KeyLeft:
-			res, err := r.client.MoveLeft(context.Background(), &esive_grpc.MoveReq{
-				Tick: 10,
-			})
+			_, err := r.client.MoveLeft(context.Background(), &esive_grpc.MoveReq{})
 			if err != nil {
 				panic(err)
 			}
-			r.SetPosition(r.playerID, res.Position)
+			pos := r.GetPosition(r.playerID)
+			r.SetPosition(r.playerID, &esive_grpc.Position{
+				X: pos.X - 1,
+				Y: pos.Y,
+			})
 		case tcell.KeyRight:
-			res, err := r.client.MoveRight(context.Background(), &esive_grpc.MoveReq{
-				Tick: 10,
-			})
+			_, err := r.client.MoveRight(context.Background(), &esive_grpc.MoveReq{})
 			if err != nil {
 				panic(err)
 			}
-			r.SetPosition(r.playerID, res.Position)
+			pos := r.GetPosition(r.playerID)
+			r.SetPosition(r.playerID, &esive_grpc.Position{
+				X: pos.X + 1,
+				Y: pos.Y,
+			})
 		}
 	})
 }
