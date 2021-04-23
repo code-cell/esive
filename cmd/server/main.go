@@ -79,13 +79,13 @@ func main() {
 	go t.Start()
 
 	registry.OnCreateComponent(func(ctx context.Context, entity components.Entity, component proto.Message) {
-		t := component.ProtoReflect().Descriptor().FullName().Name()
-		vision.HandleNewComponent(ctx, string(t), entity)
+		componentType := component.ProtoReflect().Descriptor().FullName().Name()
+		vision.HandleNewComponent(ctx, t.Current(), string(componentType), entity)
 	})
 
 	registry.OnDeleteComponent(func(ctx context.Context, entity components.Entity, component proto.Message) {
-		t := component.ProtoReflect().Descriptor().FullName().Name()
-		vision.HandleRemovedComponent(ctx, string(t), entity)
+		componentType := component.ProtoReflect().Descriptor().FullName().Name()
+		vision.HandleRemovedComponent(ctx, t.Current(), string(componentType), entity)
 	})
 
 	go func() {

@@ -26,6 +26,7 @@ message VisibilityUpdatesRes {
 
   Renderable renderable = 1;
   Action action = 2;
+  int64 tick = 3;
 }
 
 message ChatUpdatesReq {}

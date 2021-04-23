@@ -53,7 +53,7 @@ func (s *MovementSystem) QueueMove(parentContext context.Context, entity compone
 	return nil
 }
 
-func (s *MovementSystem) doMove(parentContext context.Context, entity components.Entity, offsetX, offsetY int64) error {
+func (s *MovementSystem) doMove(parentContext context.Context, tick int64, entity components.Entity, offsetX, offsetY int64) error {
 	ctx, span := movementTracer.Start(parentContext, "movement.doMove")
 	span.SetAttributes(
 		attribute.Int64("entity_id", int64(entity)),
@@ -80,7 +80,7 @@ func (s *MovementSystem) doMove(parentContext context.Context, entity components
 	pos.Y += offsetY
 
 	registry.UpdateComponents(ctx, entity, pos)
-	err = s.visionSystem.HandleMovement(ctx, entity, oldPos, newPos)
+	err = s.visionSystem.HandleMovement(ctx, tick, entity, oldPos, newPos)
 	if err != nil {
 		panic(err)
 	}
@@ -121,6 +121,6 @@ func (s *MovementSystem) OnTick(message proto.Message) {
 
 	for entity, movement := range movements {
 		ctx := trace.ContextWithSpan(context.Background(), movement.span)
-		s.doMove(ctx, entity, movement.offsetX, movement.offsetY)
+		s.doMove(ctx, tickMessage.Tick, entity, movement.offsetX, movement.offsetY)
 	}
 }

@@ -40,13 +40,14 @@ func NewWorldView(playerID int64, client esive_grpc.EsiveClient, app *tview.Appl
 	}
 }
 
-func (r *WorldView) AddRenderable(renderable *esive_grpc.Renderable) {
+func (r *WorldView) AddRenderable(tick int64, renderable *esive_grpc.Renderable) {
 	r.mtx.Lock()
-	r.Renderables[renderable.Id] = renderable
 	if renderable.Id == r.playerID {
-		r.PlayerX = renderable.Position.X
-		r.PlayerY = renderable.Position.Y
+		r.PlayerX, r.PlayerY = playerMovements.GetPlayerPos(tick, renderable.Position.X, renderable.Position.Y)
+		renderable.Position.X = r.PlayerX
+		renderable.Position.Y = r.PlayerY
 	}
+	r.Renderables[renderable.Id] = renderable
 	r.mtx.Unlock()
 	go r.app.Draw()
 }
@@ -68,7 +69,7 @@ func (r *WorldView) GetPosition(id int64) *esive_grpc.Position {
 	return r.Renderables[id].Position
 }
 
-func (r *WorldView) DeleteRenderable(id int64) {
+func (r *WorldView) DeleteRenderable(tick int64, id int64) {
 	r.mtx.Lock()
 	delete(r.Renderables, id)
 	r.mtx.Unlock()
@@ -112,6 +113,9 @@ func (r *WorldView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 				panic(err)
 			}
 		case tcell.KeyUp:
+			if !playerMovements.CanMove(t.Current()) {
+				return
+			}
 			_, err := r.client.MoveUp(context.Background(), &esive_grpc.MoveReq{})
 			if err != nil {
 				panic(err)
@@ -121,7 +125,11 @@ func (r *WorldView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 				X: pos.X,
 				Y: pos.Y - 1,
 			})
+			playerMovements.AddMovement(t.Current(), 0, -1)
 		case tcell.KeyDown:
+			if !playerMovements.CanMove(t.Current()) {
+				return
+			}
 			_, err := r.client.MoveDown(context.Background(), &esive_grpc.MoveReq{})
 			if err != nil {
 				panic(err)
@@ -131,7 +139,11 @@ func (r *WorldView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 				X: pos.X,
 				Y: pos.Y + 1,
 			})
+			playerMovements.AddMovement(t.Current(), 0, 1)
 		case tcell.KeyLeft:
+			if !playerMovements.CanMove(t.Current()) {
+				return
+			}
 			_, err := r.client.MoveLeft(context.Background(), &esive_grpc.MoveReq{})
 			if err != nil {
 				panic(err)
@@ -141,7 +153,11 @@ func (r *WorldView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 				X: pos.X - 1,
 				Y: pos.Y,
 			})
+			playerMovements.AddMovement(t.Current(), -1, 0)
 		case tcell.KeyRight:
+			if !playerMovements.CanMove(t.Current()) {
+				return
+			}
 			_, err := r.client.MoveRight(context.Background(), &esive_grpc.MoveReq{})
 			if err != nil {
 				panic(err)
@@ -151,6 +167,7 @@ func (r *WorldView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 				X: pos.X + 1,
 				Y: pos.Y,
 			})
+			playerMovements.AddMovement(t.Current(), 1, 0)
 		}
 	})
 }

@@ -24,14 +24,17 @@ var (
 	name = flag.String("name", "", "Your name. Optional.")
 )
 
+var playerMovements = NewPlayerMovements()
+var t *tick.Tick
+var log *zap.Logger
+
 func main() {
-	log, err := zap.NewDevelopment(zap.AddStacktrace(zap.ErrorLevel))
+	l, err := zap.NewDevelopment(zap.AddStacktrace(zap.ErrorLevel))
 	if err != nil {
 		panic(err)
 	}
+	log = l
 	flag.Parse()
-
-	var t *tick.Tick
 
 	name := askName()
 	conn, err := grpc.Dial(*addr,
@@ -49,13 +52,13 @@ func main() {
 				var md metadata.MD
 				opts = append(opts, grpc.Header(&md))
 				err := invoker(ctx, method, req, reply, cc, opts...)
-				serverTick, found := getTickFromMD(md)
+				receivedTick, found := getTickFromMD(md)
 				if found && t != nil {
-					log := log.With(zap.Int64("serverTick", serverTick), zap.Int64("clientTick", t.Current()))
+					log := log.With(zap.Int64("serverTick", receivedTick), zap.Int64("clientTick", t.Current()))
 					current := t.Current()
-					if current < serverTick+1 || current > serverTick+3 {
+					if current < receivedTick+1 || current > receivedTick+3 {
 						log.Warn("adjusting tick")
-						t.Adjust(serverTick + 2)
+						t.Adjust(receivedTick + 2)
 					}
 					log.Debug("received tick from the server")
 				}
@@ -108,9 +111,9 @@ func main() {
 			}
 			switch e.Action {
 			case esive_grpc.VisibilityUpdatesRes_ADD:
-				gameView.WorldView.AddRenderable(e.Renderable)
+				gameView.WorldView.AddRenderable(e.Tick, e.Renderable)
 			case esive_grpc.VisibilityUpdatesRes_REMOVE:
-				gameView.WorldView.DeleteRenderable(e.Renderable.Id)
+				gameView.WorldView.DeleteRenderable(e.Tick, e.Renderable.Id)
 			}
 		}
 	}()

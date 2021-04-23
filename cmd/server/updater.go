@@ -19,18 +19,20 @@ func newUpdater() *updater {
 	return res
 }
 
-func (u *updater) HandleVisibilityLostSight(entity components.Entity) {
+func (u *updater) HandleVisibilityLostSight(entity components.Entity, tick int64) {
 	u.Updates <- &esive_grpc.VisibilityUpdatesRes{
 		Action: esive_grpc.VisibilityUpdatesRes_REMOVE,
+		Tick:   tick,
 		Renderable: &esive_grpc.Renderable{
 			Id: int64(entity),
 		},
 	}
 
 }
-func (u *updater) HandleVisibilityUpdate(item *systems.VisionSystemLookItem) {
+func (u *updater) HandleVisibilityUpdate(item *systems.VisionSystemLookItem, tick int64) {
 	u.Updates <- &esive_grpc.VisibilityUpdatesRes{
 		Action: esive_grpc.VisibilityUpdatesRes_ADD,
+		Tick:   tick,
 		Renderable: &esive_grpc.Renderable{
 			Char:  item.Char,
 			Color: item.Color,

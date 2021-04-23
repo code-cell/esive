@@ -21,8 +21,8 @@ type VisionSystemLookItem struct {
 }
 
 type VisionSystemUpdater interface {
-	HandleVisibilityLostSight(components.Entity)
-	HandleVisibilityUpdate(*VisionSystemLookItem)
+	HandleVisibilityLostSight(components.Entity, int64)
+	HandleVisibilityUpdate(*VisionSystemLookItem, int64)
 }
 
 type VisionSystem struct {
@@ -78,7 +78,7 @@ func (s *VisionSystem) LookAll(ctx context.Context, entity components.Entity) ([
 	return res, nil
 }
 
-func (s *VisionSystem) HandleMovement(parentContext context.Context, entity components.Entity, oldPos, newPos *components.Position) error {
+func (s *VisionSystem) HandleMovement(parentContext context.Context, tick int64, entity components.Entity, oldPos, newPos *components.Position) error {
 	ctx, span := visionTracer.Start(parentContext, "vision.HandleMovement")
 	span.SetAttributes(
 		attribute.Int64("entity_id", int64(entity)),
@@ -116,7 +116,7 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, entity comp
 			oldDist := lookerPos.Distance(oldPos)
 			newDist := lookerPos.Distance(newPos)
 			if oldDist <= looker.Range && newDist > looker.Range {
-				updater.HandleVisibilityLostSight(entity)
+				updater.HandleVisibilityLostSight(entity, tick)
 			} else if newDist <= looker.Range {
 				updater.HandleVisibilityUpdate(&VisionSystemLookItem{
 					ID:    int64(entity),
@@ -124,7 +124,7 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, entity comp
 					Y:     newPos.Y,
 					Char:  render.Char,
 					Color: render.Color,
-				})
+				}, tick)
 			}
 		} else {
 			// Send its own update in case it went offsync.
@@ -134,7 +134,7 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, entity comp
 				Y:     lookerPos.Y,
 				Char:  lookerRender.Char,
 				Color: lookerRender.Color,
-			})
+			}, tick)
 
 			oldEntities, _, _, err := geo.FindInRange(ctx, oldPos.X, oldPos.Y, looker.Range)
 			if err != nil {
@@ -154,7 +154,7 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, entity comp
 			}
 			for _, oldEntity := range oldEntities {
 				if _, foundInNew := newIdx[oldEntity]; !foundInNew {
-					updater.HandleVisibilityLostSight(oldEntity)
+					updater.HandleVisibilityLostSight(oldEntity, tick)
 				}
 			}
 			for i, newEntity := range newEntities {
@@ -166,7 +166,7 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, entity comp
 						Y:     newPositions[i].Y,
 						Char:  render.Char,
 						Color: render.Color,
-					})
+					}, tick)
 				}
 			}
 		}
@@ -174,7 +174,7 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, entity comp
 	return nil
 }
 
-func (s *VisionSystem) HandleNewComponent(ctx context.Context, t string, entity components.Entity) error {
+func (s *VisionSystem) HandleNewComponent(ctx context.Context, tick int64, t string, entity components.Entity) error {
 	ctx, span := visionTracer.Start(ctx, "vision.HandleNewComponent")
 	span.SetAttributes(
 		attribute.Int64("entity_id", int64(entity)),
@@ -220,13 +220,13 @@ func (s *VisionSystem) HandleNewComponent(ctx context.Context, t string, entity 
 				Y:     pos.Y,
 				Char:  render.Char,
 				Color: render.Color,
-			})
+			}, tick)
 		}
 	}
 	return nil
 }
 
-func (s *VisionSystem) HandleRemovedComponent(ctx context.Context, t string, entity components.Entity) error {
+func (s *VisionSystem) HandleRemovedComponent(ctx context.Context, tick int64, t string, entity components.Entity) error {
 	ctx, span := visionTracer.Start(ctx, "vision.HandleRemovedComponent")
 	span.SetAttributes(
 		attribute.Int64("entity_id", int64(entity)),
@@ -249,7 +249,7 @@ func (s *VisionSystem) HandleRemovedComponent(ctx context.Context, t string, ent
 		updater, found := s.updaters[lookerEntity]
 		s.updatersMtx.Unlock()
 		if found {
-			updater.HandleVisibilityLostSight(entity)
+			updater.HandleVisibilityLostSight(entity, tick)
 		}
 	}
 
