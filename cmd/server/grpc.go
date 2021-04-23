@@ -296,7 +296,7 @@ func grpcServer(registry *components.Registry, vision *systems.VisionSystem, mov
 		grpc.ChainUnaryInterceptor(
 			otelgrpc.UnaryServerInterceptor(),
 			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-				grpc.SetHeader(ctx, metadata.Pairs("tick", strconv.FormatInt(s.tick.Current()+1, 10)))
+				grpc.SetHeader(ctx, metadata.Pairs("tick", strconv.FormatInt(s.tick.Current(), 10)))
 				return handler(ctx, req)
 			},
 		),

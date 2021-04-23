@@ -61,7 +61,6 @@ func (tick *Tick) tickOnce() {
 	} else {
 		next = atomic.AddInt64(&tick.current, 1)
 	}
-
 	now := time.Now()
 	deadline := now.Add(tick.Delay)
 
