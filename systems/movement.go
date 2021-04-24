@@ -26,12 +26,14 @@ type MovementSystem struct {
 
 	queuedMovementsMtx sync.Mutex
 	queuedMovements    map[int64]map[components.Entity]*queuedMovement
+	nextMovements      map[components.Entity]*queuedMovement
 }
 
 func NewMovementSystem(visionSystem *VisionSystem) *MovementSystem {
 	return &MovementSystem{
 		visionSystem:    visionSystem,
 		queuedMovements: make(map[int64]map[components.Entity]*queuedMovement),
+		nextMovements:   make(map[components.Entity]*queuedMovement),
 	}
 }
 
@@ -46,6 +48,19 @@ func (s *MovementSystem) QueueMove(parentContext context.Context, entity compone
 		s.queuedMovements[tick] = perEntity
 	}
 	perEntity[entity] = &queuedMovement{
+		offsetX: offsetX,
+		offsetY: offsetY,
+		span:    span,
+	}
+	return nil
+}
+
+func (s *MovementSystem) QueueMoveNextTick(parentContext context.Context, entity components.Entity, offsetX, offsetY int64) error {
+	span := trace.SpanFromContext(parentContext)
+
+	s.queuedMovementsMtx.Lock()
+	defer s.queuedMovementsMtx.Unlock()
+	s.nextMovements[entity] = &queuedMovement{
 		offsetX: offsetX,
 		offsetY: offsetY,
 		span:    span,
@@ -89,7 +104,7 @@ func (s *MovementSystem) doMove(parentContext context.Context, tick int64, entit
 	return err
 }
 
-func (s *MovementSystem) Teleport(parentContext context.Context, entity components.Entity, tick, x, y int64) error {
+func (s *MovementSystem) Teleport(parentContext context.Context, entity components.Entity, x, y int64) error {
 	ctx, span := movementTracer.Start(parentContext, "movement.Teleport")
 	span.SetAttributes(
 		attribute.Int64("entity_id", int64(entity)),
@@ -103,7 +118,7 @@ func (s *MovementSystem) Teleport(parentContext context.Context, entity componen
 	if err != nil {
 		panic(err)
 	}
-	return s.QueueMove(ctx, entity, tick, x-pos.X, y-pos.Y)
+	return s.QueueMoveNextTick(ctx, entity, x-pos.X, y-pos.Y)
 }
 
 func (s *MovementSystem) OnTick(message proto.Message) {
@@ -114,12 +129,15 @@ func (s *MovementSystem) OnTick(message proto.Message) {
 	if found {
 		delete(s.queuedMovements, tickMessage.Tick)
 	}
+	nextMovements := s.nextMovements
+	s.nextMovements = make(map[components.Entity]*queuedMovement)
 	s.queuedMovementsMtx.Unlock()
-	if !found {
-		return
-	}
 
 	for entity, movement := range movements {
+		ctx := trace.ContextWithSpan(context.Background(), movement.span)
+		s.doMove(ctx, tickMessage.Tick, entity, movement.offsetX, movement.offsetY)
+	}
+	for entity, movement := range nextMovements {
 		ctx := trace.ContextWithSpan(context.Background(), movement.span)
 		s.doMove(ctx, tickMessage.Tick, entity, movement.offsetX, movement.offsetY)
 	}
