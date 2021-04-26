@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	components "github.com/code-cell/esive/components"
 )
@@ -12,7 +13,7 @@ import (
 type ChatCommand struct {
 	Command string
 	Help    string
-	Action  func(context.Context, components.Entity, ChatListener, []string, *MovementSystem)
+	Action  func(context.Context, components.Entity, ChatListener, []string, *MovementSystem, *components.Registry)
 }
 
 var ChatCommands []*ChatCommand
@@ -29,11 +30,15 @@ func init() {
 			Command: "tp",
 			Help:    "Teleports you to the given coordinates. Eg: /tp 0 0",
 			Action:  chatCommandTp,
+		}, {
+			Command: "note",
+			Help:    "Leaves a note in the world. Eg: /note Hello world!",
+			Action:  chatCommandNote,
 		},
 	}
 }
 
-func chatCommandHelp(_ context.Context, _ components.Entity, listener ChatListener, _ []string, _ *MovementSystem) {
+func chatCommandHelp(_ context.Context, _ components.Entity, listener ChatListener, _ []string, _ *MovementSystem, registry *components.Registry) {
 	message := bytes.NewBufferString("This is the list of commands:\n")
 	for _, command := range ChatCommands {
 		message.WriteString("  /")
@@ -48,7 +53,7 @@ func chatCommandHelp(_ context.Context, _ components.Entity, listener ChatListen
 	})
 }
 
-func chatCommandTp(ctx context.Context, entity components.Entity, listener ChatListener, args []string, movement *MovementSystem) {
+func chatCommandTp(ctx context.Context, entity components.Entity, listener ChatListener, args []string, movement *MovementSystem, registry *components.Registry) {
 	if len(args) != 2 {
 		listener.HandleChatMessage(&ChatMessage{
 			FromName: CommandSender,
@@ -80,4 +85,41 @@ func chatCommandTp(ctx context.Context, entity components.Entity, listener ChatL
 	})
 
 	movement.Teleport(ctx, entity, x, y)
+}
+
+func chatCommandNote(ctx context.Context, entity components.Entity, listener ChatListener, args []string, movement *MovementSystem, registry *components.Registry) {
+	if len(args) == 0 {
+		listener.HandleChatMessage(&ChatMessage{
+			FromName: CommandSender,
+			Message:  "Invalid syntax.",
+		})
+		return
+	}
+
+	pos := &components.Position{}
+	name := &components.Named{}
+	if err := registry.LoadComponents(ctx, entity, pos, name); err != nil {
+		panic(err)
+	}
+
+	text := strings.Join(args, " ")
+
+	noteEntity, err := registry.NewEntity(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	err = registry.CreateComponents(ctx, noteEntity,
+		&components.Position{X: pos.X, Y: pos.Y},
+		&components.Render{Char: "n", Color: 0x00c965},
+		&components.Readable{Text: fmt.Sprintf("Message from %v: %v", name.Name, text)},
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	listener.HandleChatMessage(&ChatMessage{
+		FromName: CommandSender,
+		Message:  fmt.Sprintf("Note sent."),
+	})
 }

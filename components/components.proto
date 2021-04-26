@@ -25,3 +25,7 @@ message Render {
   string char = 1;
   int32 color = 2;
 }
+
+message Readable {
+  string text = 1;
+}

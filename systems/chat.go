@@ -23,14 +23,16 @@ type ChatListener interface {
 }
 
 type ChatSystem struct {
+	registry       *components.Registry
 	movementSystem *MovementSystem
 	listeners      map[components.Entity]ChatListener
 	listenersMtx   sync.Mutex
 }
 
-func NewChatSystem(movementSystem *MovementSystem) *ChatSystem {
+func NewChatSystem(movementSystem *MovementSystem, registry *components.Registry) *ChatSystem {
 	return &ChatSystem{
 		movementSystem: movementSystem,
+		registry:       registry,
 		listeners:      map[components.Entity]ChatListener{},
 	}
 }
@@ -57,7 +59,7 @@ func (s *ChatSystem) Say(parentContext context.Context, entity components.Entity
 		cmd := parts[0]
 		for _, command := range ChatCommands {
 			if command.Command == cmd {
-				command.Action(ctx, entity, listener, parts[1:], s.movementSystem)
+				command.Action(ctx, entity, listener, parts[1:], s.movementSystem, s.registry)
 				return nil
 			}
 		}
