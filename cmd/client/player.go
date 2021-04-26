@@ -2,8 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
-	"os"
 	"sync"
 
 	"go.uber.org/zap"
@@ -35,7 +33,6 @@ func (p *PlayerMovements) CanMove(tick int64) bool {
 }
 
 func (p *PlayerMovements) AddMovement(tick int64, offsetX, offsetY int) error {
-	os.Stderr.WriteString(fmt.Sprintf("queue movement for tick: %v\n", tick))
 	p.queuedMovementsMtx.Lock()
 	defer p.queuedMovementsMtx.Unlock()
 	_, found := p.queuedMovements[tick]
