@@ -21,7 +21,7 @@ func NewGameView(playerID int64, client esive_grpc.EsiveClient, app *tview.Appli
 	chat.SetBackView(world)
 
 	flex := tview.NewFlex().
-		AddItem(world, 34, 1, true).
+		AddItem(world, 38, 1, true).
 		AddItem(chat, 0, 1, true)
 
 	return &GameView{

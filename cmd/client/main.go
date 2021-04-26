@@ -56,9 +56,9 @@ func main() {
 				if found && t != nil {
 					log := log.With(zap.Int64("serverTick", receivedTick), zap.Int64("clientTick", t.Current()))
 					current := t.Current()
-					if current < receivedTick+1 || current > receivedTick+3 {
+					if current < receivedTick+1 || current > receivedTick+5 {
 						log.Warn("adjusting tick")
-						t.Adjust(receivedTick + 2)
+						t.Adjust(receivedTick + 3)
 					}
 					log.Debug("received tick from the server")
 				}
@@ -87,6 +87,9 @@ func main() {
 		panic("Didn't receive a tick from the server on the Join call.")
 	}
 	t = tick.NewTick(serverTick+2, time.Duration(joinRes.TickMilliseconds)*time.Millisecond)
+	t.AddSubscriber(func(c context.Context, i int64) {
+		log.Warn("Tick", zap.Int64("tick", i))
+	})
 	go t.Start()
 
 	visStream, err := client.VisibilityUpdates(context.Background(), &esive_grpc.VisibilityUpdatesReq{})

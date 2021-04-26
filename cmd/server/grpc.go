@@ -296,6 +296,11 @@ func grpcServer(registry *components.Registry, vision *systems.VisionSystem, mov
 		grpc.ChainUnaryInterceptor(
 			otelgrpc.UnaryServerInterceptor(),
 			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+				t, err := getTickFromCtx(ctx)
+				cur := s.tick.Current()
+				if t != 0 && t <= cur {
+					return nil, errors.New("can't send requests for current or past ticks")
+				}
 				grpc.SetHeader(ctx, metadata.Pairs("tick", strconv.FormatInt(s.tick.Current(), 10)))
 				return handler(ctx, req)
 			},

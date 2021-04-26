@@ -28,7 +28,7 @@ type WorldView struct {
 
 func NewWorldView(playerID int64, client esive_grpc.EsiveClient, app *tview.Application, chat tview.Primitive) *WorldView {
 	box := tview.NewBox()
-	box.SetBorder(true).SetRect(0, 0, 30, 30)
+	box.SetBorder(true).SetRect(0, 0, 34, 34)
 	return &WorldView{
 		Box:         box,
 		Renderables: map[int64]*esive_grpc.Renderable{},
@@ -84,8 +84,8 @@ func (r *WorldView) Draw(screen tcell.Screen) {
 	defer r.mtx.Unlock()
 	for _, renderable := range r.Renderables {
 		screen.SetContent(
-			x+int(renderable.Position.X-r.PlayerX+r.Visibility),
-			y+int(renderable.Position.Y-r.PlayerY+r.Visibility),
+			x+int(renderable.Position.X-r.PlayerX+r.Visibility+2),
+			y+int(renderable.Position.Y-r.PlayerY+r.Visibility+2),
 			rune(renderable.Char[0]),
 			nil,
 			tcell.StyleDefault.Foreground(tcell.NewHexColor(renderable.Color)),
