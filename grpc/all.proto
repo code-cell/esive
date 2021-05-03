@@ -11,6 +11,7 @@ service Esive {
   rpc MoveRight(MoveReq) returns (MoveRes) {}
 
   rpc Build(BuildReq) returns (BuildRes) {}
+  rpc Inspect(InspectReq) returns (InspectRes) {}
   rpc VisibilityUpdates(VisibilityUpdatesReq) returns (stream VisibilityUpdatesRes) {}
   rpc ChatUpdates(ChatUpdatesReq) returns (stream ChatUpdatesRes) {}
   rpc Say(SayReq) returns (SayRes) {}
@@ -41,6 +42,10 @@ message BuildReq {}
 message BuildRes {
   Position position = 1;
 }
+
+message InspectReq {}
+message InspectRes {}
+
 message JoinReq {
   string name = 1;
 }

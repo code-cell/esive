@@ -106,6 +106,8 @@ func (r *WorldView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 			switch event.Rune() {
 			case 't':
 				setFocus(r.chat)
+			case 'i':
+				r.client.Inspect(context.Background(), &esive_grpc.InspectReq{})
 			}
 		case tcell.KeyCtrlT:
 			_, err := r.client.Say(context.Background(), &esive_grpc.SayReq{Text: "FOO BAR"})

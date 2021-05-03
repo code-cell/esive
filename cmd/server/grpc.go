@@ -29,6 +29,7 @@ type PlayerData struct {
 
 type server struct {
 	registry *components.Registry
+	geo      *components.Geo
 	vision   *systems.VisionSystem
 	movement *systems.MovementSystem
 	chat     *systems.ChatSystem
@@ -133,6 +134,35 @@ func (s *server) Build(ctx context.Context, _ *esive_grpc.BuildReq) (*esive_grpc
 	}
 
 	return &esive_grpc.BuildRes{}, nil
+}
+
+func (s *server) Inspect(ctx context.Context, _ *esive_grpc.InspectReq) (*esive_grpc.InspectRes, error) {
+	playerID := ctx.Value("playerID").(string)
+	fmt.Printf("Player %v inspected\n", playerID)
+
+	playerData := s.playerData(ctx)
+	pos := &components.Position{}
+	err := s.registry.LoadComponents(ctx, playerData.Entity, pos)
+	if err != nil {
+		panic(err)
+	}
+
+	_, _, extras, err := s.geo.FindInRange(ctx, pos.X, pos.Y, 0, &components.Readable{})
+	if err != nil {
+		panic(err)
+	}
+	for _, entityExtras := range extras {
+		readable := entityExtras[0].(*components.Readable)
+		if readable.Text == "" {
+			continue
+		}
+		playerData.Updater.Chats <- &esive_grpc.ChatMessage{
+			From: systems.CommandSender,
+			Text: readable.Text,
+		}
+	}
+
+	return &esive_grpc.InspectRes{}, nil
 }
 
 func (s *server) Say(ctx context.Context, req *esive_grpc.SayReq) (*esive_grpc.SayRes, error) {
@@ -278,13 +308,14 @@ func (s *server) playerData(ctx context.Context) *PlayerData {
 	return s.players[playerID]
 }
 
-func grpcServer(registry *components.Registry, vision *systems.VisionSystem, movement *systems.MovementSystem, chat *systems.ChatSystem, t *tick.Tick) {
+func grpcServer(registry *components.Registry, geo *components.Geo, vision *systems.VisionSystem, movement *systems.MovementSystem, chat *systems.ChatSystem, t *tick.Tick) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 9000))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := &server{
 		registry: registry,
+		geo:      geo,
 		vision:   vision,
 		movement: movement,
 		chat:     chat,
