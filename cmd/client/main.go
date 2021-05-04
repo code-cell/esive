@@ -86,7 +86,7 @@ func main() {
 	if !found {
 		panic("Didn't receive a tick from the server on the Join call.")
 	}
-	t = tick.NewTick(serverTick+2, time.Duration(joinRes.TickMilliseconds)*time.Millisecond)
+	t = tick.NewTick(serverTick+3, time.Duration(joinRes.TickMilliseconds)*time.Millisecond)
 	t.AddSubscriber(func(c context.Context, i int64) {
 		log.Warn("Tick", zap.Int64("tick", i))
 	})
