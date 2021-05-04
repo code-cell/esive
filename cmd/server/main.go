@@ -23,10 +23,11 @@ import (
 
 var (
 	viewRadius          = flag.Int("radius", 15, "Radius used for visibility and for chunk size")
-	initialTestEntities = flag.Int("test-entities", 100, "Amount of test entities (a #)")
+	initialTestEntities = flag.Int("test-entities", 100, "Amount of test entities (a #). This will only trigger if redis database is flushed.")
 	redisAddr           = flag.String("redis-addr", "localhost:6379", "Redis address")
 	redisUsername       = flag.String("redis-username", "", "Redis username")
 	redisPassword       = flag.String("redis-password", "", "Redis password")
+	redisFlush          = flag.Bool("redis-flush", true, "If enabled, it empties all database when the server starts")
 	jeagerEndpoint      = flag.String("jaeger-endpoint", "http://localhost:14268/api/traces", "Jaeger collector endpoint")
 	natsURL             = flag.String("nats-url", "", "NATS server url")
 	tickDuration        = flag.Duration("tick", 1*time.Second, "Tick duration")
@@ -48,7 +49,9 @@ func main() {
 		Username: *redisUsername,
 		Password: *redisPassword,
 	})
-	rdb.FlushAll(context.Background())
+	if *redisFlush == true {
+		rdb.FlushAll(context.Background())
+	}
 	rdb.AddHook(redisotel.TracingHook{})
 
 	store := components.NewRedisStore(rdb, logger)
@@ -88,24 +91,27 @@ func main() {
 		vision.HandleRemovedComponent(ctx, t.Current(), string(componentType), entity)
 	})
 
-	go func() {
-		for i := 0; i < *initialTestEntities; i++ {
-			entity, err := registry.NewEntity(context.Background())
-			if err != nil {
-				panic(err)
+	if *redisFlush == true {
+		// Only create initial test entities if database was flushed
+		go func() {
+			for i := 0; i < *initialTestEntities; i++ {
+				entity, err := registry.NewEntity(context.Background())
+				if err != nil {
+					panic(err)
+				}
+				err = registry.CreateComponents(context.Background(), entity,
+					&components.Position{
+						X: rand.Int63n(60) - 30,
+						Y: rand.Int63n(60) - 30,
+					},
+					&components.Render{Char: "#", Color: 0xff7f00},
+				)
+				if err != nil {
+					panic(err)
+				}
 			}
-			err = registry.CreateComponents(context.Background(), entity,
-				&components.Position{
-					X: rand.Int63n(60) - 30,
-					Y: rand.Int63n(60) - 30,
-				},
-				&components.Render{Char: "#", Color: 0xff7f00},
-			)
-			if err != nil {
-				panic(err)
-			}
-		}
-	}()
+		}()
+	}
 
 	grpcServer(registry, geo, vision, movement, chat, t)
 }
