@@ -55,6 +55,12 @@ func NewChatView(client esive_grpc.EsiveClient, app *tview.Application) *ChatVie
 			app.SetFocus(chatView.backView)
 		})
 
+	chatView.Append("Welcome to Esive!")
+	chatView.Append("")
+	chatView.Append("Use the arrows in your keyboard to move around.")
+	chatView.Append("Press 't' to chat. In the chat, type '/help' to see the list of commands.")
+	chatView.Append("Press 'i' to inspect the location you're on.")
+	chatView.Append("")
 	return chatView
 }
 
