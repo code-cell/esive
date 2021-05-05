@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/code-cell/esive/actions"
 	"github.com/code-cell/esive/components"
 	"github.com/code-cell/esive/queue"
 	"github.com/code-cell/esive/systems"
@@ -54,6 +55,7 @@ func main() {
 	}
 	rdb.AddHook(redisotel.TracingHook{})
 
+	actionsQueue := actions.NewActionsQueue()
 	store := components.NewRedisStore(rdb, logger)
 	registry := components.NewRegistry(store, logger)
 	geo := components.NewGeo(registry, store, *viewRadius, logger)
@@ -78,7 +80,11 @@ func main() {
 
 	t.AddSubscriber(q.HandleTick)
 
-	go q.Consume("tick", "systems", &queue.Tick{}, movement.OnTick)
+	go q.Consume("tick", "actions", &queue.Tick{}, func(m proto.Message) {
+		tickMessage := m.(*queue.Tick)
+		actionsQueue.CallActions(tickMessage.Tick, context.Background())
+	})
+	// go q.Consume("tick", "systems", &queue.Tick{}, movement.OnTick)
 	go t.Start()
 
 	registry.OnCreateComponent(func(ctx context.Context, entity components.Entity, component proto.Message) {
@@ -113,7 +119,7 @@ func main() {
 		}()
 	}
 
-	grpcServer(registry, geo, vision, movement, chat, t)
+	grpcServer(actionsQueue, registry, geo, vision, movement, chat, t)
 }
 
 // initTracer creates a new trace provider instance and registers it as global trace provider.

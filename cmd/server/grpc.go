@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/code-cell/esive/actions"
 	components "github.com/code-cell/esive/components"
 	esive_grpc "github.com/code-cell/esive/grpc"
 	"github.com/code-cell/esive/systems"
@@ -28,12 +29,13 @@ type PlayerData struct {
 }
 
 type server struct {
-	registry *components.Registry
-	geo      *components.Geo
-	vision   *systems.VisionSystem
-	movement *systems.MovementSystem
-	chat     *systems.ChatSystem
-	tick     *tick.Tick
+	actionsQueue *actions.ActionsQueue
+	registry     *components.Registry
+	geo          *components.Geo
+	vision       *systems.VisionSystem
+	movement     *systems.MovementSystem
+	chat         *systems.ChatSystem
+	tick         *tick.Tick
 
 	playersMtx sync.Mutex
 	players    map[string]*PlayerData
@@ -44,7 +46,10 @@ func (s *server) move(ctx context.Context, tick, offsetX, offsetY int64) error {
 	fmt.Printf("Player %v moved. Offset (%d, %d)\n", playerID, offsetX, offsetY)
 
 	playerData := s.playerData(ctx)
-	return s.movement.QueueMove(ctx, playerData.Entity, tick, offsetX, offsetY)
+	s.actionsQueue.QueueAction(func(ctx context.Context) {
+		s.movement.Move(ctx, tick, playerData.Entity, offsetX, offsetY)
+	}, tick)
+	return nil
 }
 
 func getTickFromCtx(ctx context.Context) (int64, error) {
@@ -115,23 +120,30 @@ func (s *server) Build(ctx context.Context, _ *esive_grpc.BuildReq) (*esive_grpc
 	fmt.Printf("Player %v build a dot\n", playerID)
 
 	playerData := s.playerData(ctx)
-	pos := &components.Position{}
-	err := s.registry.LoadComponents(ctx, playerData.Entity, pos)
+	tick, err := getTickFromCtx(ctx)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	entity, err := s.registry.NewEntity(ctx)
-	if err != nil {
-		panic(err)
-	}
-	err = s.registry.CreateComponents(ctx, entity,
-		&components.Render{Char: ".", Color: 0x00FF00},
-		pos,
-	)
-	if err != nil {
-		panic(err)
-	}
+	s.actionsQueue.QueueAction(func(ctx context.Context) {
+		pos := &components.Position{}
+		err := s.registry.LoadComponents(ctx, playerData.Entity, pos)
+		if err != nil {
+			panic(err)
+		}
+
+		entity, err := s.registry.NewEntity(ctx)
+		if err != nil {
+			panic(err)
+		}
+		err = s.registry.CreateComponents(ctx, entity,
+			&components.Render{Char: ".", Color: 0x00FF00},
+			pos,
+		)
+		if err != nil {
+			panic(err)
+		}
+	}, tick)
 
 	return &esive_grpc.BuildRes{}, nil
 }
@@ -308,19 +320,20 @@ func (s *server) playerData(ctx context.Context) *PlayerData {
 	return s.players[playerID]
 }
 
-func grpcServer(registry *components.Registry, geo *components.Geo, vision *systems.VisionSystem, movement *systems.MovementSystem, chat *systems.ChatSystem, t *tick.Tick) {
+func grpcServer(actionsQueue *actions.ActionsQueue, registry *components.Registry, geo *components.Geo, vision *systems.VisionSystem, movement *systems.MovementSystem, chat *systems.ChatSystem, t *tick.Tick) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 9000))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := &server{
-		registry: registry,
-		geo:      geo,
-		vision:   vision,
-		movement: movement,
-		chat:     chat,
-		tick:     t,
-		players:  map[string]*PlayerData{},
+		actionsQueue: actionsQueue,
+		registry:     registry,
+		geo:          geo,
+		vision:       vision,
+		movement:     movement,
+		chat:         chat,
+		tick:         t,
+		players:      map[string]*PlayerData{},
 	}
 	grpcServer := grpc.NewServer(
 		grpc.StatsHandler(&serverStats{s}),
