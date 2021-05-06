@@ -64,7 +64,7 @@ func main() {
 
 	vision := systems.NewVisionSystem()
 	movement := systems.NewMovementSystem(vision)
-	chat := systems.NewChatSystem(movement, registry)
+	chat := systems.NewChatSystem(actionsQueue, movement, registry)
 
 	err = queue.SetupNats(*natsURL)
 	if err != nil {

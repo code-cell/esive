@@ -169,7 +169,7 @@ func (s *server) Inspect(ctx context.Context, _ *esive_grpc.InspectReq) (*esive_
 			continue
 		}
 		playerData.Updater.Chats <- &esive_grpc.ChatMessage{
-			From: systems.CommandSender,
+			From: "<SYSTEM>",
 			Text: readable.Text,
 		}
 	}
@@ -180,8 +180,13 @@ func (s *server) Inspect(ctx context.Context, _ *esive_grpc.InspectReq) (*esive_
 func (s *server) Say(ctx context.Context, req *esive_grpc.SayReq) (*esive_grpc.SayRes, error) {
 	playerID := ctx.Value("playerID").(string)
 	fmt.Printf("Player %v say: %v\n", playerID, req.Text)
+	tick, err := getTickFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	playerData := s.playerData(ctx)
-	err := s.chat.Say(ctx, playerData.Entity, req.Text)
+	err = s.chat.Say(ctx, tick, playerData.Entity, req.Text)
 	if err != nil {
 		panic(err)
 	}
