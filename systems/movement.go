@@ -6,17 +6,9 @@ import (
 	"github.com/code-cell/esive/components"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 )
 
 var movementTracer = otel.Tracer("systems/movement")
-
-type queuedMovement struct {
-	offsetX int64
-	offsetY int64
-
-	span trace.Span
-}
 
 type MovementSystem struct {
 	visionSystem *VisionSystem
@@ -63,20 +55,3 @@ func (s *MovementSystem) Move(parentContext context.Context, tick int64, entity 
 
 	return err
 }
-
-// func (s *MovementSystem) Teleport(parentContext context.Context, entity components.Entity, x, y int64) error {
-// 	ctx, span := movementTracer.Start(parentContext, "movement.Teleport")
-// 	span.SetAttributes(
-// 		attribute.Int64("entity_id", int64(entity)),
-// 		attribute.Int64("x", x),
-// 		attribute.Int64("y", y),
-// 	)
-// 	defer span.End()
-
-// 	pos := &components.Position{}
-// 	err := registry.LoadComponents(ctx, entity, pos)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	return s.QueueMoveNextTick(ctx, entity, x-pos.X, y-pos.Y)
-// }

@@ -46,9 +46,9 @@ func (s *server) move(ctx context.Context, tick, offsetX, offsetY int64) error {
 	fmt.Printf("Player %v moved. Offset (%d, %d)\n", playerID, offsetX, offsetY)
 
 	playerData := s.playerData(ctx)
-	s.actionsQueue.QueueAction(func(ctx context.Context) {
+	s.actionsQueue.QueueAction(ctx, tick, func(ctx context.Context) {
 		s.movement.Move(ctx, tick, playerData.Entity, offsetX, offsetY)
-	}, tick)
+	})
 	return nil
 }
 
@@ -125,7 +125,7 @@ func (s *server) Build(ctx context.Context, _ *esive_grpc.BuildReq) (*esive_grpc
 		return nil, err
 	}
 
-	s.actionsQueue.QueueAction(func(ctx context.Context) {
+	s.actionsQueue.QueueAction(ctx, tick, func(ctx context.Context) {
 		pos := &components.Position{}
 		err := s.registry.LoadComponents(ctx, playerData.Entity, pos)
 		if err != nil {
@@ -143,7 +143,7 @@ func (s *server) Build(ctx context.Context, _ *esive_grpc.BuildReq) (*esive_grpc
 		if err != nil {
 			panic(err)
 		}
-	}, tick)
+	})
 
 	return &esive_grpc.BuildRes{}, nil
 }

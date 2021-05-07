@@ -98,13 +98,13 @@ func (cm *ChatCommands) teleportCommand(ctx context.Context, tick int64, entity 
 		Message:  fmt.Sprintf("Teleporting to [%d %d].", x, y),
 	})
 
-	cm.actionQueue.QueueInmediate(func(c context.Context) {
+	cm.actionQueue.QueueInmediate(ctx, func(ctx context.Context) {
 		pos := &components.Position{}
-		err := cm.registry.LoadComponents(context.TODO(), entity, pos)
+		err := cm.registry.LoadComponents(ctx, entity, pos)
 		if err != nil {
 			panic(err)
 		}
-		cm.movement.Move(context.TODO(), tick, entity, x-pos.X, y-pos.Y)
+		cm.movement.Move(ctx, tick, entity, x-pos.X, y-pos.Y)
 	})
 }
 
