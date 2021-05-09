@@ -20,8 +20,28 @@ func NewMovementSystem(visionSystem *VisionSystem) *MovementSystem {
 	}
 }
 
+func (s *MovementSystem) SetVelocity(parentContext context.Context, tick int64, entity components.Entity, velX, velY int64) error {
+	ctx, span := movementTracer.Start(parentContext, "movement.SetVelocity")
+	span.SetAttributes(
+		attribute.Int64("entity_id", int64(entity)),
+		attribute.Int64("velX", velX),
+		attribute.Int64("velY", velY),
+	)
+	defer span.End()
+
+	mov := &components.Moveable{
+		VelX: velX,
+		VelY: velY,
+	}
+	err := registry.UpdateComponents(ctx, entity, mov)
+	if err != nil {
+		panic(err)
+	}
+	return nil
+}
+
 func (s *MovementSystem) Move(parentContext context.Context, tick int64, entity components.Entity, offsetX, offsetY int64) error {
-	ctx, span := movementTracer.Start(parentContext, "movement.doMove")
+	ctx, span := movementTracer.Start(parentContext, "movement.Move")
 	span.SetAttributes(
 		attribute.Int64("entity_id", int64(entity)),
 		attribute.Int64("offsetX", offsetX),
@@ -52,6 +72,42 @@ func (s *MovementSystem) Move(parentContext context.Context, tick int64, entity 
 		panic(err)
 	}
 	geo.OnMovePosition(ctx, entity, oldPos, newPos)
+
+	return err
+}
+
+func (s *MovementSystem) MoveAllMoveables(parentContext context.Context, tick int64) error {
+	ctx, span := movementTracer.Start(parentContext, "movement.MoveAll")
+	defer span.End()
+
+	entities, extras, err := registry.EntitiesWithComponentType(ctx, &components.Moveable{}, &components.Moveable{}, &components.Position{})
+	if err != nil {
+		panic(err)
+	}
+
+	for i, entity := range entities {
+		mov := extras[i][0].(*components.Moveable)
+		pos := extras[i][1].(*components.Position)
+
+		newPos := &components.Position{
+			X: pos.X + mov.VelX,
+			Y: pos.Y + mov.VelY,
+		}
+		oldPos := &components.Position{
+			X: pos.X,
+			Y: pos.Y,
+		}
+
+		pos.X += mov.VelX
+		pos.Y += mov.VelY
+
+		registry.UpdateComponents(ctx, entity, pos)
+		err = s.visionSystem.HandleMovement(ctx, tick, entity, oldPos, newPos)
+		if err != nil {
+			panic(err)
+		}
+		geo.OnMovePosition(ctx, entity, oldPos, newPos)
+	}
 
 	return err
 }

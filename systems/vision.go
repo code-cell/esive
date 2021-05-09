@@ -17,6 +17,8 @@ type VisionSystemLookItem struct {
 	X     int64
 	Y     int64
 	Char  string
+	VelX  int64
+	VelY  int64
 	Color int32
 }
 
@@ -57,7 +59,7 @@ func (s *VisionSystem) LookAll(ctx context.Context, entity components.Entity) ([
 		return nil, err
 	}
 
-	entitiesInRange, positions, extras, err := geo.FindInRange(ctx, lookerPos.X, lookerPos.Y, looker.Range, &components.Render{})
+	entitiesInRange, positions, extras, err := geo.FindInRange(ctx, lookerPos.X, lookerPos.Y, looker.Range, &components.Render{}, &components.Moveable{})
 	if err != nil {
 		return nil, err
 	}
@@ -66,9 +68,12 @@ func (s *VisionSystem) LookAll(ctx context.Context, entity components.Entity) ([
 	for i, cmp := range entitiesInRange {
 		pos := positions[i]
 		render := extras[i][0].(*components.Render)
+		mov := extras[i][1].(*components.Moveable)
 		res = append(res, &VisionSystemLookItem{
 			X:     pos.X,
 			Y:     pos.Y,
+			VelX:  mov.VelX,
+			VelY:  mov.VelY,
 			ID:    int64(cmp),
 			Char:  render.Char,
 			Color: render.Color,

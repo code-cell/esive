@@ -9,6 +9,13 @@ message Position {
   int64 y = 2;
 }
 
+message Moveable {
+  // How many units per tick it moves.
+  int64 vel_x = 1;
+  // How many units per tick it moves.
+  int64 vel_y = 2;
+}
+
 message Named {
   string name = 1;
 }

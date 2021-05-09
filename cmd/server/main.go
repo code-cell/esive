@@ -83,6 +83,7 @@ func main() {
 	go q.Consume("tick", "actions", &queue.Tick{}, func(m proto.Message) {
 		tickMessage := m.(*queue.Tick)
 		actionsQueue.CallActions(tickMessage.Tick, context.Background())
+		movement.MoveAllMoveables(context.Background(), tickMessage.Tick)
 	})
 	// go q.Consume("tick", "systems", &queue.Tick{}, movement.OnTick)
 	go t.Start()

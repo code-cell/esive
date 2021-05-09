@@ -41,6 +41,10 @@ func (u *updater) HandleVisibilityUpdate(item *systems.VisionSystemLookItem, tic
 				X: item.X,
 				Y: item.Y,
 			},
+			Velocity: &esive_grpc.Velocity{
+				X: item.VelX,
+				Y: item.VelY,
+			},
 		},
 	}
 

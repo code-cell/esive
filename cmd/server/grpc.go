@@ -41,13 +41,10 @@ type server struct {
 	players    map[string]*PlayerData
 }
 
-func (s *server) move(ctx context.Context, tick, offsetX, offsetY int64) error {
-	playerID := ctx.Value("playerID").(string)
-	fmt.Printf("Player %v moved. Offset (%d, %d)\n", playerID, offsetX, offsetY)
-
+func (s *server) setVelocity(ctx context.Context, tick, velX, velY int64) error {
 	playerData := s.playerData(ctx)
 	s.actionsQueue.QueueAction(ctx, tick, func(ctx context.Context) {
-		s.movement.Move(ctx, tick, playerData.Entity, offsetX, offsetY)
+		s.movement.SetVelocity(ctx, tick, playerData.Entity, velX, velY)
 	})
 	return nil
 }
@@ -64,12 +61,24 @@ func getTickFromCtx(ctx context.Context) (int64, error) {
 	return strconv.ParseInt(tick[0], 10, 64)
 }
 
+func (s *server) Stop(ctx context.Context, req *esive_grpc.MoveReq) (*esive_grpc.MoveRes, error) {
+	tick, err := getTickFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	err = s.setVelocity(ctx, tick, 0, 0)
+	if err != nil {
+		panic(err)
+	}
+	return &esive_grpc.MoveRes{}, nil
+}
+
 func (s *server) MoveUp(ctx context.Context, req *esive_grpc.MoveReq) (*esive_grpc.MoveRes, error) {
 	tick, err := getTickFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
-	err = s.move(ctx, tick, 0, -1)
+	err = s.setVelocity(ctx, tick, 0, -1)
 	if err != nil {
 		panic(err)
 	}
@@ -82,7 +91,7 @@ func (s *server) MoveDown(ctx context.Context, req *esive_grpc.MoveReq) (*esive_
 		return nil, err
 	}
 
-	err = s.move(ctx, tick, 0, 1)
+	err = s.setVelocity(ctx, tick, 0, 1)
 	if err != nil {
 		panic(err)
 	}
@@ -95,7 +104,7 @@ func (s *server) MoveLeft(ctx context.Context, req *esive_grpc.MoveReq) (*esive_
 		return nil, err
 	}
 
-	err = s.move(ctx, tick, -1, 0)
+	err = s.setVelocity(ctx, tick, -1, 0)
 	if err != nil {
 		panic(err)
 	}
@@ -108,7 +117,7 @@ func (s *server) MoveRight(ctx context.Context, req *esive_grpc.MoveReq) (*esive
 		return nil, err
 	}
 
-	err = s.move(ctx, tick, 1, 0)
+	err = s.setVelocity(ctx, tick, 1, 0)
 	if err != nil {
 		panic(err)
 	}
@@ -210,8 +219,8 @@ func (s *server) Join(ctx context.Context, req *esive_grpc.JoinReq) (*esive_grpc
 
 	err = s.registry.CreateComponents(ctx, entity,
 		&components.Named{Name: req.Name},
-		// &components.Position{X: rand.Int63n(1000) - 500, Y: rand.Int63n(1000) - 500},
 		&components.Position{X: rand.Int63n(10) - 5, Y: rand.Int63n(10) - 5},
+		&components.Moveable{},
 		&components.Speaker{Range: float32(*viewRadius)},
 		&components.Render{Char: "@", Color: 0xFF0000},
 		&components.Looker{Range: float32(*viewRadius)},

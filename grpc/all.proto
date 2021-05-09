@@ -5,6 +5,8 @@ option go_package = "github.com/code-cell/esive/grpc";
 package grpc;
 
 service Esive {
+  // Player movement
+  rpc Stop(MoveReq) returns (MoveRes) {}
   rpc MoveUp(MoveReq) returns (MoveRes) {}
   rpc MoveDown(MoveReq) returns (MoveRes) {}
   rpc MoveLeft(MoveReq) returns (MoveRes) {}
@@ -61,8 +63,9 @@ message SayRes {}
 message Renderable {
   int64 id = 1;
   Position position = 2;
-  string char = 3;
-  int32 color = 4;
+  Velocity velocity = 3;
+  string char = 4;
+  int32 color = 5;
 }
 
 message ChatMessage {
@@ -71,6 +74,11 @@ message ChatMessage {
 }
 
 message Position {
+  int64 x = 1;
+  int64 y = 2;
+}
+
+message Velocity {
   int64 x = 1;
   int64 y = 2;
 }
