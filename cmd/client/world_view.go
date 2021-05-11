@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"sync"
 
@@ -96,75 +95,75 @@ func (r *WorldView) Draw(screen tcell.Screen) {
 
 func (r *WorldView) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return r.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-		switch event.Key() {
-		case tcell.KeyEnter:
-			_, err := r.client.Build(context.Background(), &esive_grpc.BuildReq{})
-			if err != nil {
-				panic(err)
-			}
-		case tcell.KeyRune:
-			switch event.Rune() {
-			case 't':
-				setFocus(r.chat)
-			case 'i':
-				r.client.Inspect(context.Background(), &esive_grpc.InspectReq{})
-			}
-		case tcell.KeyUp:
-			if !playerMovements.CanMove(t.Current()) {
-				return
-			}
-			_, err := r.client.MoveUp(context.Background(), &esive_grpc.MoveReq{})
-			if err != nil {
-				panic(err)
-			}
-			pos := r.GetPosition(r.playerID)
-			r.SetPosition(r.playerID, &esive_grpc.Position{
-				X: pos.X,
-				Y: pos.Y - 1,
-			})
-			playerMovements.AddMovement(t.Current(), 0, -1)
-		case tcell.KeyDown:
-			if !playerMovements.CanMove(t.Current()) {
-				return
-			}
-			_, err := r.client.MoveDown(context.Background(), &esive_grpc.MoveReq{})
-			if err != nil {
-				panic(err)
-			}
-			pos := r.GetPosition(r.playerID)
-			r.SetPosition(r.playerID, &esive_grpc.Position{
-				X: pos.X,
-				Y: pos.Y + 1,
-			})
-			playerMovements.AddMovement(t.Current(), 0, 1)
-		case tcell.KeyLeft:
-			if !playerMovements.CanMove(t.Current()) {
-				return
-			}
-			_, err := r.client.MoveLeft(context.Background(), &esive_grpc.MoveReq{})
-			if err != nil {
-				panic(err)
-			}
-			pos := r.GetPosition(r.playerID)
-			r.SetPosition(r.playerID, &esive_grpc.Position{
-				X: pos.X - 1,
-				Y: pos.Y,
-			})
-			playerMovements.AddMovement(t.Current(), -1, 0)
-		case tcell.KeyRight:
-			if !playerMovements.CanMove(t.Current()) {
-				return
-			}
-			_, err := r.client.MoveRight(context.Background(), &esive_grpc.MoveReq{})
-			if err != nil {
-				panic(err)
-			}
-			pos := r.GetPosition(r.playerID)
-			r.SetPosition(r.playerID, &esive_grpc.Position{
-				X: pos.X + 1,
-				Y: pos.Y,
-			})
-			playerMovements.AddMovement(t.Current(), 1, 0)
-		}
+		// 	switch event.Key() {
+		// 	case tcell.KeyEnter:
+		// 		_, err := r.client.Build(context.Background(), &esive_grpc.BuildReq{})
+		// 		if err != nil {
+		// 			panic(err)
+		// 		}
+		// 	case tcell.KeyRune:
+		// 		switch event.Rune() {
+		// 		case 't':
+		// 			setFocus(r.chat)
+		// 		case 'i':
+		// 			r.client.Inspect(context.Background(), &esive_grpc.InspectReq{})
+		// 		}
+		// 	case tcell.KeyUp:
+		// 		if !playerMovements.CanMove(t.Current()) {
+		// 			return
+		// 		}
+		// 		_, err := r.client.MoveUp(context.Background(), &esive_grpc.MoveReq{})
+		// 		if err != nil {
+		// 			panic(err)
+		// 		}
+		// 		pos := r.GetPosition(r.playerID)
+		// 		r.SetPosition(r.playerID, &esive_grpc.Position{
+		// 			X: pos.X,
+		// 			Y: pos.Y - 1,
+		// 		})
+		// 		playerMovements.AddMovement(t.Current(), 0, -1)
+		// 	case tcell.KeyDown:
+		// 		if !playerMovements.CanMove(t.Current()) {
+		// 			return
+		// 		}
+		// 		_, err := r.client.MoveDown(context.Background(), &esive_grpc.MoveReq{})
+		// 		if err != nil {
+		// 			panic(err)
+		// 		}
+		// 		pos := r.GetPosition(r.playerID)
+		// 		r.SetPosition(r.playerID, &esive_grpc.Position{
+		// 			X: pos.X,
+		// 			Y: pos.Y + 1,
+		// 		})
+		// 		playerMovements.AddMovement(t.Current(), 0, 1)
+		// 	case tcell.KeyLeft:
+		// 		if !playerMovements.CanMove(t.Current()) {
+		// 			return
+		// 		}
+		// 		_, err := r.client.MoveLeft(context.Background(), &esive_grpc.MoveReq{})
+		// 		if err != nil {
+		// 			panic(err)
+		// 		}
+		// 		pos := r.GetPosition(r.playerID)
+		// 		r.SetPosition(r.playerID, &esive_grpc.Position{
+		// 			X: pos.X - 1,
+		// 			Y: pos.Y,
+		// 		})
+		// 		playerMovements.AddMovement(t.Current(), -1, 0)
+		// 	case tcell.KeyRight:
+		// 		if !playerMovements.CanMove(t.Current()) {
+		// 			return
+		// 		}
+		// 		_, err := r.client.MoveRight(context.Background(), &esive_grpc.MoveReq{})
+		// 		if err != nil {
+		// 			panic(err)
+		// 		}
+		// 		pos := r.GetPosition(r.playerID)
+		// 		r.SetPosition(r.playerID, &esive_grpc.Position{
+		// 			X: pos.X + 1,
+		// 			Y: pos.Y,
+		// 		})
+		// 		playerMovements.AddMovement(t.Current(), 1, 0)
+		// 	}
 	})
 }

@@ -88,6 +88,9 @@ func (s *MovementSystem) MoveAllMoveables(parentContext context.Context, tick in
 	for i, entity := range entities {
 		mov := extras[i][0].(*components.Moveable)
 		pos := extras[i][1].(*components.Position)
+		if mov.VelX == 0 && mov.VelY == 0 {
+			continue
+		}
 
 		newPos := &components.Position{
 			X: pos.X + mov.VelX,

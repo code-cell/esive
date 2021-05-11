@@ -81,28 +81,12 @@ func handleBot(client esive_grpc.EsiveClient, name string, visRes esive_grpc.Esi
 
 	time.Sleep(10000 * time.Second)
 	for {
-		time.Sleep(time.Duration(rand.Intn(1000)+1000) * time.Millisecond)
-		switch rand.Intn(4) {
-		case 0:
-			_, err := client.MoveUp(context.Background(), &esive_grpc.MoveReq{})
-			if err != nil {
-				panic(err)
-			}
-		case 1:
-			_, err := client.MoveDown(context.Background(), &esive_grpc.MoveReq{})
-			if err != nil {
-				panic(err)
-			}
-		case 2:
-			_, err := client.MoveLeft(context.Background(), &esive_grpc.MoveReq{})
-			if err != nil {
-				panic(err)
-			}
-		case 3:
-			_, err := client.MoveRight(context.Background(), &esive_grpc.MoveReq{})
-			if err != nil {
-				panic(err)
-			}
+		time.Sleep(time.Duration(rand.Intn(10000)+1000) * time.Millisecond)
+		x := rand.Int63n(3) - 1
+		y := rand.Int63n(3) - 1
+		_, err := client.SetVelocity(context.Background(), &esive_grpc.Velocity{X: x, Y: y})
+		if err != nil {
+			panic(err)
 		}
 	}
 }

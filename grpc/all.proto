@@ -5,12 +5,7 @@ option go_package = "github.com/code-cell/esive/grpc";
 package grpc;
 
 service Esive {
-  // Player movement
-  rpc Stop(MoveReq) returns (MoveRes) {}
-  rpc MoveUp(MoveReq) returns (MoveRes) {}
-  rpc MoveDown(MoveReq) returns (MoveRes) {}
-  rpc MoveLeft(MoveReq) returns (MoveRes) {}
-  rpc MoveRight(MoveReq) returns (MoveRes) {}
+  rpc SetVelocity(Velocity) returns (MoveRes) {}
 
   rpc Build(BuildReq) returns (BuildRes) {}
   rpc Inspect(InspectReq) returns (InspectRes) {}

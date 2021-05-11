@@ -41,14 +41,6 @@ type server struct {
 	players    map[string]*PlayerData
 }
 
-func (s *server) setVelocity(ctx context.Context, tick, velX, velY int64) error {
-	playerData := s.playerData(ctx)
-	s.actionsQueue.QueueAction(ctx, tick, func(ctx context.Context) {
-		s.movement.SetVelocity(ctx, tick, playerData.Entity, velX, velY)
-	})
-	return nil
-}
-
 func getTickFromCtx(ctx context.Context) (int64, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -61,66 +53,15 @@ func getTickFromCtx(ctx context.Context) (int64, error) {
 	return strconv.ParseInt(tick[0], 10, 64)
 }
 
-func (s *server) Stop(ctx context.Context, req *esive_grpc.MoveReq) (*esive_grpc.MoveRes, error) {
+func (s *server) SetVelocity(ctx context.Context, v *esive_grpc.Velocity) (*esive_grpc.MoveRes, error) {
 	tick, err := getTickFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
-	err = s.setVelocity(ctx, tick, 0, 0)
-	if err != nil {
-		panic(err)
-	}
-	return &esive_grpc.MoveRes{}, nil
-}
-
-func (s *server) MoveUp(ctx context.Context, req *esive_grpc.MoveReq) (*esive_grpc.MoveRes, error) {
-	tick, err := getTickFromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-	err = s.setVelocity(ctx, tick, 0, -1)
-	if err != nil {
-		panic(err)
-	}
-	return &esive_grpc.MoveRes{}, nil
-}
-
-func (s *server) MoveDown(ctx context.Context, req *esive_grpc.MoveReq) (*esive_grpc.MoveRes, error) {
-	tick, err := getTickFromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.setVelocity(ctx, tick, 0, 1)
-	if err != nil {
-		panic(err)
-	}
-	return &esive_grpc.MoveRes{}, nil
-}
-
-func (s *server) MoveLeft(ctx context.Context, req *esive_grpc.MoveReq) (*esive_grpc.MoveRes, error) {
-	tick, err := getTickFromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.setVelocity(ctx, tick, -1, 0)
-	if err != nil {
-		panic(err)
-	}
-	return &esive_grpc.MoveRes{}, nil
-}
-
-func (s *server) MoveRight(ctx context.Context, req *esive_grpc.MoveReq) (*esive_grpc.MoveRes, error) {
-	tick, err := getTickFromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.setVelocity(ctx, tick, 1, 0)
-	if err != nil {
-		panic(err)
-	}
+	playerData := s.playerData(ctx)
+	s.actionsQueue.QueueAction(ctx, tick, func(ctx context.Context) {
+		s.movement.SetVelocity(ctx, tick, playerData.Entity, int64(v.X), int64(v.Y))
+	})
 	return &esive_grpc.MoveRes{}, nil
 }
 
