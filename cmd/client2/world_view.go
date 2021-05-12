@@ -17,8 +17,9 @@ type WorldView struct {
 	width  int
 	height int
 
-	face   font.Face
-	client *Client
+	face       font.Face
+	client     *Client
+	prediction *Prediction
 
 	mtx         sync.Mutex
 	renderables map[int64]*esive_grpc.Renderable
@@ -27,7 +28,7 @@ type WorldView struct {
 	visibility  int64
 }
 
-func NewWorldView(width, height int, client *Client, visibility int64) *WorldView {
+func NewWorldView(width, height int, client *Client, prediction *Prediction, visibility int64) *WorldView {
 	// tt, err := opentype.Parse(gomono.TTF)
 	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
 	if err != nil {
@@ -46,6 +47,7 @@ func NewWorldView(width, height int, client *Client, visibility int64) *WorldVie
 
 		face:       ff,
 		client:     client,
+		prediction: prediction,
 		visibility: visibility,
 
 		renderables: make(map[int64]*esive_grpc.Renderable),
@@ -58,32 +60,21 @@ func (g *WorldView) Draw(screen *ebiten.Image) {
 	cellHeight := float64(screen.Bounds().Dy()) / float64(g.height)
 
 	renderables := g.client.Renderables()
-	// First readjust playerX/playerY
-	for id, r := range renderables {
-		if id == g.client.PlayerID {
-			g.playerX = r.Position.X
-			g.playerY = r.Position.Y
-		}
-	}
 
-	for _, r := range renderables {
+	g.playerX, g.playerY = g.prediction.GetPredictedPlayerPosition(g.client.tick.Current())
+
+	for id, r := range renderables {
+		x := r.Position.X
+		y := r.Position.Y
+		if id == g.client.PlayerID {
+			x = g.playerX
+			y = g.playerY
+		}
 		text.Draw(screen,
 			r.Char,
 			g.face,
-			int((r.Position.X-g.playerX)+g.visibility)*int(cellWidth),
-			int((r.Position.Y-g.playerY)+g.visibility)*int(cellHeight),
+			int((x-g.playerX)+g.visibility)*int(cellWidth),
+			int((y-g.playerY)+g.visibility+1)*int(cellHeight),
 			color.Black)
 	}
-
-	// for x := 0; x < g.width; x++ {
-	// 	for y := 0; y < g.height; y++ {
-	// 		var col color.Color
-	// 		if (x+y)%2 == 0 {
-	// 			col = color.RGBA{0x80, 0, 0, 0xff}
-	// 		} else {
-	// 			col = color.RGBA{0, 0x80, 0, 0xff}
-	// 		}
-	// 		text.Draw(screen, "@", g.face, int(cellWidth)*x, (int(cellHeight)*(y+1))-2, col)
-	// 	}
-	// }
 }

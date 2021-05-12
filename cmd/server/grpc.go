@@ -222,6 +222,10 @@ func (s *server) VisibilityUpdates(req *esive_grpc.VisibilityUpdatesReq, stream 
 					X: viewItem.X,
 					Y: viewItem.Y,
 				},
+				Velocity: &esive_grpc.Velocity{
+					X: viewItem.VelX,
+					Y: viewItem.VelY,
+				},
 			},
 		})
 	}

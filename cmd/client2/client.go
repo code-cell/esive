@@ -31,15 +31,17 @@ type Client struct {
 	PlayerID       int64
 	renderablesMtx sync.Mutex
 	renderables    map[int64]*esive_grpc.Renderable
+	prediction     *Prediction
 }
 
-func NewClient(addr, name string) *Client {
+func NewClient(addr, name string, prediction *Prediction) *Client {
 	return &Client{
 		opts: ClientOpts{
 			addr: addr,
 			name: name,
 		},
 		renderables: make(map[int64]*esive_grpc.Renderable),
+		prediction:  prediction,
 	}
 }
 
@@ -108,7 +110,6 @@ func (c *Client) Connect() error {
 			}
 			switch e.Action {
 			case esive_grpc.VisibilityUpdatesRes_ADD:
-
 				c.UpdateRenderable(e.Tick, e.Renderable)
 			case esive_grpc.VisibilityUpdatesRes_REMOVE:
 				c.DeleteRenderable(e.Tick, e.Renderable.Id)
@@ -158,6 +159,9 @@ func (c *Client) UpdateRenderable(tick int64, renderable *esive_grpc.Renderable)
 	c.renderablesMtx.Lock()
 	defer c.renderablesMtx.Unlock()
 	c.renderables[renderable.Id] = renderable
+	if renderable.Id == c.PlayerID {
+		c.prediction.UpdatePlayerPositionFromServer(tick, renderable.Position.X, renderable.Position.Y, renderable.Velocity.X, renderable.Velocity.Y)
+	}
 }
 
 func (c *Client) DeleteRenderable(tick int64, id int64) {
