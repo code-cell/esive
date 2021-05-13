@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -50,6 +51,7 @@ func (p *Prediction) AddVelocity(tick int64, x, y int) error {
 }
 
 func (p *Prediction) UpdatePlayerPositionFromServer(tick, x, y, vx, vy int64) {
+	fmt.Printf("[%v] Received velocity to (%v,%v)\n", tick, vx, vy)
 	p.mtx.Lock()
 	defer p.mtx.Unlock()
 	for i := p.serverTick; i <= tick; i++ {
@@ -67,19 +69,18 @@ func (p *Prediction) GetPredictedPlayerPosition(clientTick int64) (int64, int64)
 	p.mtx.Lock()
 	defer p.mtx.Unlock()
 
-	// process the rest of the queue, in order
 	x := p.serverX
 	y := p.serverY
 	vx := p.serverVX
 	vy := p.serverVY
-	for i := p.serverTick + 1; i <= clientTick; i++ {
+	for i := p.serverTick + 1; i < clientTick; i++ {
 		velocity, found := p.queuedVelocities[i]
 		if found {
 			vx = int64(velocity.x)
 			vy = int64(velocity.y)
-			x += vx
-			y += vy
 		}
+		x += vx
+		y += vy
 	}
 	return x, y
 }

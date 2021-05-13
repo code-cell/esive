@@ -83,7 +83,7 @@ func (s *VisionSystem) LookAll(ctx context.Context, entity components.Entity) ([
 	return res, nil
 }
 
-func (s *VisionSystem) HandleMovement(parentContext context.Context, tick int64, entity components.Entity, oldPos, newPos *components.Position) error {
+func (s *VisionSystem) HandleMovement(parentContext context.Context, tick int64, entity components.Entity, mov *components.Moveable, oldPos, newPos *components.Position) error {
 	ctx, span := visionTracer.Start(parentContext, "vision.HandleMovement")
 	span.SetAttributes(
 		attribute.Int64("entity_id", int64(entity)),
@@ -100,7 +100,7 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, tick int64,
 		return err
 	}
 
-	lookers, extras, err := registry.EntitiesWithComponentType(ctx, &components.Looker{}, &components.Looker{}, &components.Position{}, &components.Render{})
+	lookers, extras, err := registry.EntitiesWithComponentType(ctx, &components.Looker{}, &components.Looker{}, &components.Position{}, &components.Render{}, &components.Moveable{})
 	if err != nil {
 		return err
 	}
@@ -108,6 +108,7 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, tick int64,
 		looker := extras[i][0].(*components.Looker)
 		lookerPos := extras[i][1].(*components.Position)
 		lookerRender := extras[i][2].(*components.Render)
+		lookerMov := extras[i][3].(*components.Moveable)
 
 		s.updatersMtx.Lock()
 		updater, found := s.updaters[lookerE]
@@ -127,6 +128,8 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, tick int64,
 					ID:    int64(entity),
 					X:     newPos.X,
 					Y:     newPos.Y,
+					VelX:  mov.VelX,
+					VelY:  mov.VelY,
 					Char:  render.Char,
 					Color: render.Color,
 				}, tick)
@@ -139,13 +142,15 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, tick int64,
 				Y:     lookerPos.Y,
 				Char:  lookerRender.Char,
 				Color: lookerRender.Color,
+				VelX:  lookerMov.VelX,
+				VelY:  lookerMov.VelY,
 			}, tick)
 
 			oldEntities, _, _, err := geo.FindInRange(ctx, oldPos.X, oldPos.Y, looker.Range)
 			if err != nil {
 				return err
 			}
-			newEntities, newPositions, extras, err := geo.FindInRange(ctx, newPos.X, newPos.Y, looker.Range, &components.Render{})
+			newEntities, newPositions, extras, err := geo.FindInRange(ctx, newPos.X, newPos.Y, looker.Range, &components.Render{}, &components.Moveable{})
 			if err != nil {
 				return err
 			}
@@ -165,10 +170,13 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, tick int64,
 			for i, newEntity := range newEntities {
 				if _, foundInOld := oldIdx[newEntity]; !foundInOld {
 					render := extras[i][0].(*components.Render)
+					mov := extras[i][1].(*components.Moveable)
 					updater.HandleVisibilityUpdate(&VisionSystemLookItem{
 						ID:    int64(newEntity),
 						X:     newPositions[i].X,
 						Y:     newPositions[i].Y,
+						VelX:  mov.VelX,
+						VelY:  mov.VelY,
 						Char:  render.Char,
 						Color: render.Color,
 					}, tick)

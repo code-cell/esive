@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"image/color"
 	"log"
 
@@ -31,13 +32,16 @@ type Game struct {
 var (
 	// This is configured when building releases to point to the test server.
 	defaultAddr = "localhost:9000"
-
-	addr = flag.String("addr", defaultAddr, "Server address")
-	name = flag.String("name", "", "Your name. Optional.")
 )
 
 func NewGame() *Game {
+	addr := flag.String("addr", defaultAddr, "Server address")
+	name := flag.String("name", "", "Your name. Required.")
 	flag.Parse()
+	if *name == "" {
+		panic("the `name` flag is required.")
+	}
+
 	prediction := NewPrediction()
 
 	client := NewClient(*addr, *name, prediction)
@@ -62,6 +66,7 @@ func (g *Game) Update() error {
 	clientTick := g.client.tick.Current()
 	if clientTick != g.lastTick && g.nextSetVelocity {
 		g.prediction.AddVelocity(clientTick, g.nextVelocityX, g.nextVelocityY)
+		fmt.Printf("[%v] Sending velocity to (%v,%v)\n", clientTick, g.nextVelocityX, g.nextVelocityY)
 		go g.client.SetVelocity(g.nextVelocityX, g.nextVelocityY)
 		g.nextSetVelocity = false
 	}
@@ -70,6 +75,7 @@ func (g *Game) Update() error {
 	if changed {
 		if g.prediction.CanMove(clientTick) {
 			g.prediction.AddVelocity(clientTick, x, y)
+			fmt.Printf("[%v] Sending velocity to (%v,%v)\n", clientTick, x, y)
 			go g.client.SetVelocity(x, y)
 		} else {
 			// The player already moved this tick. Plan movement for next tick.

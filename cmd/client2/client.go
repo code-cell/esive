@@ -73,7 +73,7 @@ func (c *Client) Connect() error {
 						log.Warn("adjusting tick")
 						c.tick.Adjust(receivedTick + 3)
 					}
-					log.Debug("received tick from the server")
+					// log.Debug("received tick from the server")
 				}
 				return err
 			},
@@ -88,7 +88,7 @@ func (c *Client) Connect() error {
 
 	var md metadata.MD
 	res, err := c.esiveClient.Join(context.Background(), &esive_grpc.JoinReq{
-		Name: "TODO",
+		Name: c.opts.name,
 	}, grpc.Header(&md))
 	if err != nil {
 		return err

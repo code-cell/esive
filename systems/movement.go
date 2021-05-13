@@ -2,6 +2,7 @@ package systems
 
 import (
 	"context"
+	"sync"
 
 	"github.com/code-cell/esive/components"
 	"go.opentelemetry.io/otel"
@@ -12,11 +13,15 @@ var movementTracer = otel.Tracer("systems/movement")
 
 type MovementSystem struct {
 	visionSystem *VisionSystem
+
+	forceVelocityUpdatesMtx sync.Mutex
+	forceVelocityUpdates    map[int64][]components.Entity
 }
 
 func NewMovementSystem(visionSystem *VisionSystem) *MovementSystem {
 	return &MovementSystem{
-		visionSystem: visionSystem,
+		visionSystem:         visionSystem,
+		forceVelocityUpdates: map[int64][]components.Entity{},
 	}
 }
 
@@ -37,6 +42,19 @@ func (s *MovementSystem) SetVelocity(parentContext context.Context, tick int64, 
 	if err != nil {
 		panic(err)
 	}
+	if velX == 0 && velY == 0 {
+
+		s.forceVelocityUpdatesMtx.Lock()
+		defer s.forceVelocityUpdatesMtx.Unlock()
+		l, found := s.forceVelocityUpdates[tick]
+		if !found {
+			l = []components.Entity{}
+		}
+		l = append(l, entity)
+		s.forceVelocityUpdates[tick] = l
+
+	}
+
 	return nil
 }
 
@@ -67,7 +85,8 @@ func (s *MovementSystem) Move(parentContext context.Context, tick int64, entity 
 	pos.Y += offsetY
 
 	registry.UpdateComponents(ctx, entity, pos)
-	err = s.visionSystem.HandleMovement(ctx, tick, entity, oldPos, newPos)
+	// TODO: Do something better with the moveable.
+	err = s.visionSystem.HandleMovement(ctx, tick, entity, &components.Moveable{}, oldPos, newPos)
 	if err != nil {
 		panic(err)
 	}
@@ -77,6 +96,7 @@ func (s *MovementSystem) Move(parentContext context.Context, tick int64, entity 
 }
 
 func (s *MovementSystem) MoveAllMoveables(parentContext context.Context, tick int64) error {
+	// TODO: The core logic of this is duplicated
 	ctx, span := movementTracer.Start(parentContext, "movement.MoveAll")
 	defer span.End()
 
@@ -105,12 +125,48 @@ func (s *MovementSystem) MoveAllMoveables(parentContext context.Context, tick in
 		pos.Y += mov.VelY
 
 		registry.UpdateComponents(ctx, entity, pos)
-		err = s.visionSystem.HandleMovement(ctx, tick, entity, oldPos, newPos)
+		err = s.visionSystem.HandleMovement(ctx, tick, entity, mov, oldPos, newPos)
 		if err != nil {
 			panic(err)
 		}
 		geo.OnMovePosition(ctx, entity, oldPos, newPos)
 	}
 
-	return err
+	s.forceVelocityUpdatesMtx.Lock()
+
+	l, found := s.forceVelocityUpdates[tick]
+	if !found {
+		s.forceVelocityUpdatesMtx.Unlock()
+		return nil
+	}
+	delete(s.forceVelocityUpdates, tick)
+	s.forceVelocityUpdatesMtx.Unlock()
+
+	// TODO: This is O(n), not ideal
+	for _, entity := range l {
+		pos := &components.Position{}
+		mov := &components.Moveable{}
+		registry.LoadComponents(ctx, entity, pos, mov)
+
+		newPos := &components.Position{
+			X: pos.X + mov.VelX,
+			Y: pos.Y + mov.VelY,
+		}
+		oldPos := &components.Position{
+			X: pos.X,
+			Y: pos.Y,
+		}
+
+		pos.X += mov.VelX
+		pos.Y += mov.VelY
+
+		registry.UpdateComponents(ctx, entity, pos)
+		err := s.visionSystem.HandleMovement(ctx, tick, entity, mov, oldPos, newPos)
+		if err != nil {
+			panic(err)
+		}
+		geo.OnMovePosition(ctx, entity, oldPos, newPos)
+	}
+
+	return nil
 }
