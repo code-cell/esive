@@ -1,10 +1,12 @@
 package main
 
 import (
+	"image"
 	"image/color"
 	"log"
 	"sync"
 
+	"github.com/blizzy78/ebitenui/widget"
 	esive_grpc "github.com/code-cell/esive/grpc"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
@@ -26,6 +28,8 @@ type WorldView struct {
 	playerX     int64
 	playerY     int64
 	visibility  int64
+
+	widget *widget.Widget
 }
 
 func NewWorldView(width, height int, client *Client, prediction *Prediction, visibility int64) *WorldView {
@@ -51,13 +55,21 @@ func NewWorldView(width, height int, client *Client, prediction *Prediction, vis
 		visibility: visibility,
 
 		renderables: make(map[int64]*esive_grpc.Renderable),
+
+		widget: widget.NewWidget(),
 	}
 }
 
-func (g *WorldView) Draw(screen *ebiten.Image) {
+func (g *WorldView) Render(screen *ebiten.Image, def widget.DeferredRenderFunc) {
+	g.widget.Render(screen, def)
+	g.draw(screen)
+}
+
+func (g *WorldView) draw(screen *ebiten.Image) {
+	r := g.widget.Rect
 	screen.Fill(color.Transparent)
-	cellWidth := float64(screen.Bounds().Dx()) / float64(g.width)
-	cellHeight := float64(screen.Bounds().Dy()) / float64(g.height)
+	cellWidth := float64(r.Bounds().Dx()) / float64(g.width)
+	cellHeight := float64(r.Bounds().Dy()) / float64(g.height)
 
 	renderables := g.client.Renderables()
 
@@ -75,6 +87,18 @@ func (g *WorldView) Draw(screen *ebiten.Image) {
 			g.face,
 			int((x-g.playerX)+g.visibility)*int(cellWidth),
 			int((y-g.playerY)+g.visibility+1)*int(cellHeight),
-			color.Black)
+			color.White)
 	}
+}
+
+func (g *WorldView) GetWidget() *widget.Widget {
+	return g.widget
+}
+
+func (g *WorldView) PreferredSize() (int, int) {
+	return g.width * 15, g.height * 15
+}
+
+func (g *WorldView) SetLocation(rect image.Rectangle) {
+	g.widget.Rect = rect
 }

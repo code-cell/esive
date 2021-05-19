@@ -15,6 +15,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
@@ -32,6 +34,9 @@ func NewInput() *Input {
 
 // Update updates the current input states.
 func (i *Input) Update() {
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		os.Exit(0)
+	}
 }
 
 // Dir returns a currently pressed direction.

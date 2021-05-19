@@ -3,6 +3,7 @@ module github.com/code-cell/esive
 go 1.15
 
 require (
+	github.com/blizzy78/ebitenui v0.0.0-20210117025656-686fc9c50c07 // indirect
 	github.com/gdamore/tcell/v2 v2.2.0
 	github.com/go-redis/redis/extra/redisotel v0.3.0
 	github.com/go-redis/redis/v8 v8.8.0
