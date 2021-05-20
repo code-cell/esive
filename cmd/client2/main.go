@@ -95,24 +95,6 @@ func NewGame() *Game {
 	container.AddChild(worldViewContainer)
 	container.AddChild(menu)
 
-	// c := widget.NewContainer(
-	// 	widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical))),
-	// 	widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(color.RGBA{0x13, 0x1a, 0x22, 0xff})),
-	// )
-	// chatC := widget.NewContainer(
-	// 	widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
-	// 		Stretch:   true,
-	// 		MaxHeight: 427,
-	// 	})),
-	// 	widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
-	// 	widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(color.RGBA{0x13, 0x1a, 0x22, 0xff})),
-	// )
-
-	// chatC.AddChild(menu.chatList)
-
-	// c.AddChild(chatC)
-	// c.AddChild(menu.textInput)
-
 	return &Game{
 		ScreenWidth:     800,
 		ScreenHeight:    467,
