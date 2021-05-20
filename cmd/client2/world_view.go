@@ -29,7 +29,8 @@ type WorldView struct {
 	playerY     int64
 	visibility  int64
 
-	widget *widget.Widget
+	widget  *widget.Widget
+	focused bool
 }
 
 func NewWorldView(width, height int, client *Client, prediction *Prediction, visibility int64) *WorldView {
@@ -67,7 +68,6 @@ func (g *WorldView) Render(screen *ebiten.Image, def widget.DeferredRenderFunc) 
 
 func (g *WorldView) draw(screen *ebiten.Image) {
 	r := g.widget.Rect
-	screen.Fill(color.Transparent)
 	cellWidth := float64(r.Bounds().Dx()) / float64(g.width)
 	cellHeight := float64(r.Bounds().Dy()) / float64(g.height)
 
@@ -101,4 +101,8 @@ func (g *WorldView) PreferredSize() (int, int) {
 
 func (g *WorldView) SetLocation(rect image.Rectangle) {
 	g.widget.Rect = rect
+}
+
+func (g *WorldView) Focus(focused bool) {
+	g.focused = focused
 }

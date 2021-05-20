@@ -79,6 +79,7 @@ func NewGame() *Game {
 
 	menu := NewMenu(ff)
 	worldView := NewWorldView(31, 31, client, prediction, 15)
+	worldView.Focus(true)
 
 	container := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewGridLayout(
@@ -87,9 +88,13 @@ func NewGame() *Game {
 			widget.GridLayoutOpts.Spacing(0, 5),
 		)),
 	)
-
-	container.AddChild(worldView)
+	worldViewContainer := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
+	)
+	worldViewContainer.AddChild(worldView)
+	container.AddChild(worldViewContainer)
 	container.AddChild(menu)
+
 	// c := widget.NewContainer(
 	// 	widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Direction(widget.DirectionVertical))),
 	// 	widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(color.RGBA{0x13, 0x1a, 0x22, 0xff})),
@@ -111,7 +116,7 @@ func NewGame() *Game {
 	return &Game{
 		ScreenWidth:     800,
 		ScreenHeight:    467,
-		backgroundColor: color.RGBA{0xfa, 0xf8, 0xef, 0xff},
+		backgroundColor: color.RGBA{0x13, 0x1a, 0x22, 0xff},
 
 		client:         client,
 		input:          NewInput(),
@@ -128,52 +133,48 @@ func NewGame() *Game {
 
 func (g *Game) Update() error {
 	g.menuUI.Update()
-	clientTick := g.client.tick.Current()
-	if clientTick != g.lastTick && g.nextSetVelocity {
-		g.prediction.AddVelocity(clientTick, g.nextVelocityX, g.nextVelocityY)
-		fmt.Printf("[%v] Sending velocity to (%v,%v)\n", clientTick, g.nextVelocityX, g.nextVelocityY)
-		go g.client.SetVelocity(g.nextVelocityX, g.nextVelocityY)
-		g.nextSetVelocity = false
-	}
-	g.input.Update()
-	x, y, changed := g.input.Dir()
-	if changed {
-		if g.prediction.CanMove(clientTick) {
-			g.prediction.AddVelocity(clientTick, x, y)
-			fmt.Printf("[%v] Sending velocity to (%v,%v)\n", clientTick, x, y)
-			go g.client.SetVelocity(x, y)
-		} else {
-			// The player already moved this tick. Plan movement for next tick.
-			g.nextSetVelocity = true
-			g.nextVelocityX = x
-			g.nextVelocityY = y
-		}
-	}
 
+	clientTick := g.client.tick.Current()
+	if g.worldView.focused {
+		g.input.Update()
+		if clientTick != g.lastTick && g.nextSetVelocity {
+			g.prediction.AddVelocity(clientTick, g.nextVelocityX, g.nextVelocityY)
+			fmt.Printf("[%v] Sending velocity to (%v,%v)\n", clientTick, g.nextVelocityX, g.nextVelocityY)
+			go g.client.SetVelocity(g.nextVelocityX, g.nextVelocityY)
+			g.nextSetVelocity = false
+		}
+		x, y, changed := g.input.Dir()
+		if changed {
+			if g.prediction.CanMove(clientTick) {
+				g.prediction.AddVelocity(clientTick, x, y)
+				fmt.Printf("[%v] Sending velocity to (%v,%v)\n", clientTick, x, y)
+				go g.client.SetVelocity(x, y)
+			} else {
+				// The player already moved this tick. Plan movement for next tick.
+				g.nextSetVelocity = true
+				g.nextVelocityX = x
+				g.nextVelocityY = y
+			}
+		}
+
+	}
 	g.lastTick = clientTick
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	screen.Fill(g.backgroundColor)
 	g.menuUI.Draw(screen)
-	// screen.Fill(g.backgroundColor)
-	// g.menuUI.Draw(g.menuImage)
-	// g.worldView.Draw(g.worldViewImage)
-	// op := &ebiten.DrawImageOptions{}
-	// screen.DrawImage(g.worldViewImage, op)
-
-	// op = &ebiten.DrawImageOptions{}
-	// op.GeoM.Translate((31 * 15), 0)
-	// screen.DrawImage(g.menuImage, op)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return g.ScreenWidth, g.ScreenHeight
+	return outsideWidth, outsideHeight
 }
 
 func main() {
 	game := NewGame()
 	ebiten.SetWindowSize(game.ScreenWidth, game.ScreenHeight)
+	ebiten.SetWindowResizable(true)
 	ebiten.SetWindowTitle("Esive")
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
