@@ -60,17 +60,10 @@ func NewGame() *Game {
 		panic("the `name` flag is required.")
 	}
 
-	prediction := NewPrediction()
-
-	client := NewClient(*addr, *name, prediction)
-	if err := client.Connect(); err != nil {
-		panic(err)
-	}
 	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	ff, err := opentype.NewFace(tt, &opentype.FaceOptions{
 		Size:    18,
 		DPI:     72,
@@ -78,6 +71,18 @@ func NewGame() *Game {
 	})
 
 	menu := NewMenu(ff)
+	prediction := NewPrediction()
+
+	client := NewClient(*addr, *name, prediction, menu)
+	if err := client.Connect(); err != nil {
+		panic(err)
+	}
+
+	menu.TextInput.SendEvent.AddHandler(func(args interface{}) {
+		eventArgs := args.(*TextInputSendEventArgs)
+		client.SendChatMessage(eventArgs.InputText)
+	})
+
 	worldView := NewWorldView(31, 31, client, prediction, 15)
 	worldView.Focus(true)
 

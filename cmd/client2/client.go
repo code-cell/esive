@@ -15,6 +15,10 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+type NewLineHandler interface {
+	HandleChatMessage(string, string)
+}
+
 type ClientOpts struct {
 	addr string
 	name string
@@ -32,9 +36,10 @@ type Client struct {
 	renderablesMtx sync.Mutex
 	renderables    map[int64]*esive_grpc.Renderable
 	prediction     *Prediction
+	chatHandler    NewLineHandler
 }
 
-func NewClient(addr, name string, prediction *Prediction) *Client {
+func NewClient(addr, name string, prediction *Prediction, chatHandler NewLineHandler) *Client {
 	return &Client{
 		opts: ClientOpts{
 			addr: addr,
@@ -42,6 +47,7 @@ func NewClient(addr, name string, prediction *Prediction) *Client {
 		},
 		renderables: make(map[int64]*esive_grpc.Renderable),
 		prediction:  prediction,
+		chatHandler: chatHandler,
 	}
 }
 
@@ -117,6 +123,22 @@ func (c *Client) Connect() error {
 		}
 	}()
 
+	chatStream, err := c.esiveClient.ChatUpdates(context.Background(), &esive_grpc.ChatUpdatesReq{})
+	if err != nil {
+		panic(err)
+	}
+
+	go func() {
+		for {
+			e, err := chatStream.Recv()
+			if err != nil {
+				fmt.Println(err.Error())
+				return
+			}
+			c.chatHandler.HandleChatMessage(e.Message.From, e.Message.Text)
+		}
+	}()
+
 	return nil
 }
 
@@ -174,5 +196,11 @@ func (c *Client) SetVelocity(x, y int) {
 	c.esiveClient.SetVelocity(context.Background(), &esive_grpc.Velocity{
 		X: int64(x),
 		Y: int64(y),
+	})
+}
+
+func (c *Client) SendChatMessage(message string) {
+	c.esiveClient.Say(context.Background(), &esive_grpc.SayReq{
+		Text: message,
 	})
 }
