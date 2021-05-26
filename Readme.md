@@ -13,7 +13,7 @@ To try it using the test server just download the binary and run the `client` on
 - Players can join the server and move around. They have a visibility range of 15 units.
 - The world coordinates are [int64, int64] (pretty big)
 - Players can chat with nearby players.
-- Client side commands.
+- Client side commands. Type `/help` to see them.
 - Uses [Jaeger](https://www.jaegertracing.io/)
 
 ## Running a server
@@ -37,17 +37,4 @@ Once it's configured, run the following image: `ghcr.io/code-cell/esive_server:<
 Press `t` to chat.
 In the chat, type `/help` to see the list of commands.
 
-### Using the binary
-
 Visit the [Releases](https://github.com/code-cell/esive/releases), download the latest, unpack it and run `./client -h` to find out your options. The default options should just work connecting to the demo server.
-
-### Using docker
-
-Docker images are hosted in GitHub. Follow [this guide](https://docs.github.com/en/packages/guides/configuring-docker-for-use-with-github-packages)
-to make your docker able to pull images from it.
-
-Once it's configured, you can run the client with:
-
-```docker run -it --rm ghcr.io/code-cell/esive_client:<VERSION>```
-
-Use a proper version, find the latest one [here](https://github.com/orgs/code-cell/packages/container/package/esive_client). It's not advised to use `latest`.

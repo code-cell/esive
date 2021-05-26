@@ -3,15 +3,13 @@ module github.com/code-cell/esive
 go 1.15
 
 require (
-	github.com/blizzy78/ebitenui v0.0.0-20210117025656-686fc9c50c07 // indirect
-	github.com/gdamore/tcell/v2 v2.2.0
+	github.com/blizzy78/ebitenui v0.0.0-20210117025656-686fc9c50c07
 	github.com/go-redis/redis/extra/redisotel v0.3.0
 	github.com/go-redis/redis/v8 v8.8.0
 	github.com/google/uuid v1.2.0
 	github.com/hajimehoshi/ebiten/v2 v2.1.0
 	github.com/nats-io/jsm.go v0.0.22
 	github.com/nats-io/nats.go v1.10.1-0.20210228004050-ed743748acac
-	github.com/rivo/tview v0.0.0-20210312174852-ae9464cc3598
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.19.0
