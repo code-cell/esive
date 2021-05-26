@@ -67,6 +67,12 @@ func NewMenu(ff font.Face) *Menu {
 	menu.Container.AddChild(NewScrollableContainer(menu.chatText))
 	menu.Container.AddChild(menu.TextInput)
 
+	menu.chatText.Label += "Welcome to Esive!\n"
+	menu.chatText.Label += "\n"
+	menu.chatText.Label += "Use the arrows in your keyboard to move around.\n"
+	// menu.chatText.Label += "Press 't' to chat. In the chat, type '/help' to see the list of commands.\n"
+	menu.chatText.Label += "Press 'esc' to close the game.\n"
+	menu.chatText.Label += "\n"
 	return menu
 }
 

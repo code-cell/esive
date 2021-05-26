@@ -1,176 +1,183 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
+	"image/color"
+	"log"
 	"strconv"
-	"time"
 
-	esive_grpc "github.com/code-cell/esive/grpc"
-	"github.com/code-cell/esive/tick"
-	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
+	_ "image/png"
+
+	"github.com/blizzy78/ebitenui"
+	"github.com/blizzy78/ebitenui/widget"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 )
+
+type Game struct {
+	ScreenWidth  int
+	ScreenHeight int
+
+	backgroundColor color.Color
+
+	client         *Client
+	prediction     *Prediction
+	input          *Input
+	worldView      *WorldView
+	worldViewImage *ebiten.Image
+	menuImage      *ebiten.Image
+
+	menuUI *ebitenui.UI
+
+	lastTick int64
+
+	// When the player changes velocity twice in a tick, we 'plan' it for next tick. For example, moving just one tile requires setting velocity to the direction, and setting it back to 0 on the next tick.
+	nextSetVelocity bool
+	nextVelocityX   int
+	nextVelocityY   int
+}
 
 var (
 	// This is configured when building releases to point to the test server.
 	defaultAddr = "localhost:9000"
 
-	addr = flag.String("addr", defaultAddr, "Server address")
-	name = flag.String("name", "", "Your name. Optional.")
+	textIdleColor                  = "dff4ff"
+	textDisabledColor              = "5a7a91"
+	textInputCaretColor            = "e7c34b"
+	textInputDisabledCaretColor    = "766326"
+	listSelectedBackground         = "4b687a"
+	listDisabledSelectedBackground = "2a3944"
 )
 
-var playerMovements = NewPlayerMovements()
-var t *tick.Tick
-var log *zap.Logger
+func NewGame() *Game {
+	addr := flag.String("addr", defaultAddr, "Server address")
+	name := flag.String("name", "", "Your name. Required.")
+	flag.Parse()
+	if *name == "" {
+		panic("the `name` flag is required.")
+	}
+
+	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ff, err := opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    18,
+		DPI:     72,
+		Hinting: font.HintingFull,
+	})
+
+	menu := NewMenu(ff)
+	prediction := NewPrediction()
+
+	client := NewClient(*addr, *name, prediction, menu)
+	if err := client.Connect(); err != nil {
+		panic(err)
+	}
+
+	menu.TextInput.SendEvent.AddHandler(func(args interface{}) {
+		eventArgs := args.(*TextInputSendEventArgs)
+		client.SendChatMessage(eventArgs.InputText)
+	})
+
+	worldView := NewWorldView(31, 31, client, prediction, 15)
+	worldView.Focus(true)
+
+	container := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewGridLayout(
+			widget.GridLayoutOpts.Columns(2),
+			widget.GridLayoutOpts.Stretch([]bool{false, true}, []bool{true}),
+			widget.GridLayoutOpts.Spacing(0, 5),
+		)),
+	)
+	worldViewContainer := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
+	)
+	worldViewContainer.AddChild(worldView)
+	container.AddChild(worldViewContainer)
+	container.AddChild(menu)
+
+	return &Game{
+		ScreenWidth:     800,
+		ScreenHeight:    467,
+		backgroundColor: color.RGBA{0x13, 0x1a, 0x22, 0xff},
+
+		client:         client,
+		input:          NewInput(),
+		prediction:     prediction,
+		worldView:      worldView,
+		worldViewImage: ebiten.NewImage(31*15, 31*15),
+		menuImage:      ebiten.NewImage(800-31*15, 467),
+
+		menuUI: &ebitenui.UI{
+			Container: container,
+		},
+	}
+}
+
+func (g *Game) Update() error {
+	g.menuUI.Update()
+
+	clientTick := g.client.tick.Current()
+	if g.worldView.focused {
+		g.input.Update()
+		if clientTick != g.lastTick && g.nextSetVelocity {
+			g.prediction.AddVelocity(clientTick, g.nextVelocityX, g.nextVelocityY)
+			fmt.Printf("[%v] Sending velocity to (%v,%v)\n", clientTick, g.nextVelocityX, g.nextVelocityY)
+			go g.client.SetVelocity(g.nextVelocityX, g.nextVelocityY)
+			g.nextSetVelocity = false
+		}
+		x, y, changed := g.input.Dir()
+		if changed {
+			if g.prediction.CanMove(clientTick) {
+				g.prediction.AddVelocity(clientTick, x, y)
+				fmt.Printf("[%v] Sending velocity to (%v,%v)\n", clientTick, x, y)
+				go g.client.SetVelocity(x, y)
+			} else {
+				// The player already moved this tick. Plan movement for next tick.
+				g.nextSetVelocity = true
+				g.nextVelocityX = x
+				g.nextVelocityY = y
+			}
+		}
+
+	}
+	g.lastTick = clientTick
+	return nil
+}
+
+func (g *Game) Draw(screen *ebiten.Image) {
+	screen.Fill(g.backgroundColor)
+	g.menuUI.Draw(screen)
+}
+
+func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+	return outsideWidth, outsideHeight
+}
 
 func main() {
-	l, err := zap.NewDevelopment(zap.AddStacktrace(zap.ErrorLevel))
-	if err != nil {
-		panic(err)
-	}
-	log = l
-	flag.Parse()
-
-	name := askName()
-	conn, err := grpc.Dial(*addr,
-		grpc.WithInsecure(),
-		grpc.WithChainUnaryInterceptor(
-			// Set client tick in the request header
-			func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-				if t != nil {
-					ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("tick", strconv.FormatInt(t.Current(), 10)))
-				}
-				return invoker(ctx, method, req, reply, cc, opts...)
-			},
-			// Parse server tick and adjust to it
-			func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-				var md metadata.MD
-				opts = append(opts, grpc.Header(&md))
-				err := invoker(ctx, method, req, reply, cc, opts...)
-				receivedTick, found := getTickFromMD(md)
-				if found && t != nil {
-					log := log.With(zap.Int64("serverTick", receivedTick), zap.Int64("clientTick", t.Current()))
-					current := t.Current()
-					if current < receivedTick+1 || current > receivedTick+5 {
-						log.Warn("adjusting tick")
-						t.Adjust(receivedTick + 3)
-					}
-					log.Debug("received tick from the server")
-				}
-				return err
-			},
-		),
-	)
-
-	if err != nil {
-		panic(err)
-	}
-	defer conn.Close()
-
-	client := esive_grpc.NewEsiveClient(conn)
-
-	var md metadata.MD
-	joinRes, err := client.Join(context.Background(), &esive_grpc.JoinReq{
-		Name: name,
-	}, grpc.Header(&md))
-	if err != nil {
-		panic(err)
-	}
-	playerID := joinRes.PlayerId
-	serverTick, found := getTickFromMD(md)
-	if !found {
-		panic("Didn't receive a tick from the server on the Join call.")
-	}
-	t = tick.NewTick(serverTick+3, time.Duration(joinRes.TickMilliseconds)*time.Millisecond)
-	t.AddSubscriber(func(c context.Context, i int64) {
-		log.Warn("Tick", zap.Int64("tick", i))
-	})
-	go t.Start()
-
-	visStream, err := client.VisibilityUpdates(context.Background(), &esive_grpc.VisibilityUpdatesReq{})
-	if err != nil {
-		panic(err)
-	}
-
-	chatStream, err := client.ChatUpdates(context.Background(), &esive_grpc.ChatUpdatesReq{})
-	if err != nil {
-		panic(err)
-	}
-
-	app := tview.NewApplication()
-	gameView := NewGameView(playerID, client, app)
-
-	go func() {
-		for {
-			e, err := visStream.Recv()
-			if err != nil {
-				fmt.Println(err.Error())
-				return
-			}
-			switch e.Action {
-			case esive_grpc.VisibilityUpdatesRes_ADD:
-				gameView.WorldView.AddRenderable(e.Tick, e.Renderable)
-			case esive_grpc.VisibilityUpdatesRes_REMOVE:
-				gameView.WorldView.DeleteRenderable(e.Tick, e.Renderable.Id)
-			}
-		}
-	}()
-
-	go func() {
-		for {
-			e, err := chatStream.Recv()
-			if err != nil {
-				fmt.Println(err.Error())
-				return
-			}
-			gameView.ChatView.Append(fmt.Sprintf("%v: %v", e.Message.From, e.Message.Text))
-		}
-	}()
-
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEsc {
-			app.Stop()
-		}
-		return event
-	})
-	if err := app.SetRoot(gameView, true).SetFocus(gameView).Run(); err != nil {
-		panic(err)
+	game := NewGame()
+	ebiten.SetWindowSize(game.ScreenWidth, game.ScreenHeight)
+	ebiten.SetWindowResizable(true)
+	ebiten.SetWindowTitle("Esive")
+	if err := ebiten.RunGame(game); err != nil {
+		log.Fatal(err)
 	}
 }
 
-func askName() string {
-	if *name != "" {
-		return *name
-	}
-	n := ""
-	app := tview.NewApplication()
-	inputField := tview.NewInputField().
-		SetLabel("Enter your name: ").
-		SetFieldWidth(0)
-	inputField.
-		SetDoneFunc(func(key tcell.Key) {
-			n = inputField.GetText()
-			app.Stop()
-		})
-	if err := app.SetRoot(inputField, true).SetFocus(inputField).Run(); err != nil {
+func hexToColor(h string) color.Color {
+	u, err := strconv.ParseUint(h, 16, 0)
+	if err != nil {
 		panic(err)
 	}
-	return n
-}
 
-func getTickFromMD(md metadata.MD) (int64, bool) {
-	str, found := md["tick"]
-	if found && len(str) > 0 {
-		serverTick, err := strconv.ParseInt(str[0], 10, 64)
-		if err != nil {
-			return 0, false
-		}
-		return serverTick, true
+	return color.RGBA{
+		R: uint8(u & 0xff0000 >> 16),
+		G: uint8(u & 0xff00 >> 8),
+		B: uint8(u & 0xff),
+		A: 255,
 	}
-	return 0, false
 }
