@@ -34,7 +34,11 @@ Once it's configured, run the following image: `ghcr.io/code-cell/esive_server:<
 
 ## Running the client
 
-Press `t` to chat.
-In the chat, type `/help` to see the list of commands.
+There're no automated releases for the client and it has to be built at the moment.
 
-Visit the [Releases](https://github.com/code-cell/esive/releases), download the latest, unpack it and run `./client -h` to find out your options. The default options should just work connecting to the demo server.
+To build it, clone this repo and run
+```
+make build_client
+```
+
+It generates the binary `esive_client`, so just run it with `./esive_client --name <YOUR NAME>`.
