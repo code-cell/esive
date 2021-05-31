@@ -1,9 +1,13 @@
 builds:
-  - id: "client"
-    dir: cmd/client
-    binary: client
-    ldflags:
-     - -X main.defaultAddr=104.196.192.37:9000
-  - id: "server"
-    dir: cmd/server
-    binary: server
+- id: "client"
+  dir: cmd/client
+  binary: client
+  ldflags:
+  - -X main.defaultAddr=104.196.192.37:9000
+  goos:
+  - linux
+- id: "server"
+  dir: cmd/server
+  binary: server
+  goos:
+  - linux
