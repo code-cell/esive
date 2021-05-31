@@ -6,8 +6,12 @@ builds:
   - -X main.defaultAddr=104.196.192.37:9000
   goos:
   - linux
+  goarch:
+  - amd64
 - id: "server"
   dir: cmd/server
   binary: server
   goos:
   - linux
+  goarch:
+  - amd64
