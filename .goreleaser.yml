@@ -1,17 +1,13 @@
 builds:
+- id: "server"
+  dir: cmd/server
+  binary: server
+
+# Disabled. Cross compilation doesn't work atm for ebiten, and even one single target linux-amd64 gave compilation errors.
 - id: "client"
   dir: cmd/client
   binary: client
   ldflags:
   - -X main.defaultAddr=104.196.192.37:9000
   goos:
-  - linux
   goarch:
-  - amd64
-- id: "server"
-  dir: cmd/server
-  binary: server
-  goos:
-  - linux
-  goarch:
-  - amd64
