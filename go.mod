@@ -1,6 +1,6 @@
 module github.com/code-cell/esive
 
-go 1.15
+go 1.16
 
 require (
 	github.com/blizzy78/ebitenui v0.0.0-20210117025656-686fc9c50c07

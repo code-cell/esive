@@ -5,28 +5,27 @@ import (
 
 	"github.com/blizzy78/ebitenui/image"
 	"github.com/blizzy78/ebitenui/widget"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 func NewScrollableContainer(content widget.PreferredSizeLocateableWidget) widget.PreferredSizeLocateableWidget {
-	listIdle, _, err := ebitenutil.NewImageFromFile("./cmd/client/graphics/list-idle.png")
+	listIdle, err := imageByFilename("graphics/list-idle.png")
 	if err != nil {
 		panic(err)
 	}
 
-	mask, _, err := ebitenutil.NewImageFromFile("./cmd/client/graphics/list-mask.png")
+	mask, err := imageByFilename("graphics/list-mask.png")
 	if err != nil {
 		panic(err)
 	}
-	trackIdle, _, err := ebitenutil.NewImageFromFile("./cmd/client/graphics/slider-track-idle.png")
+	trackIdle, err := imageByFilename("graphics/slider-track-idle.png")
 	if err != nil {
 		panic(err)
 	}
-	handleIdle, _, err := ebitenutil.NewImageFromFile("./cmd/client/graphics/slider-handle-idle.png")
+	handleIdle, err := imageByFilename("graphics/slider-handle-idle.png")
 	if err != nil {
 		panic(err)
 	}
-	handleHover, _, err := ebitenutil.NewImageFromFile("./cmd/client/graphics/slider-handle-hover.png")
+	handleHover, err := imageByFilename("graphics/slider-handle-hover.png")
 	if err != nil {
 		panic(err)
 	}

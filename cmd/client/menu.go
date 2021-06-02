@@ -6,7 +6,6 @@ import (
 
 	"github.com/blizzy78/ebitenui/image"
 	"github.com/blizzy78/ebitenui/widget"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"golang.org/x/image/font"
 )
 
@@ -19,7 +18,7 @@ type Menu struct {
 
 func NewMenu(ff font.Face) *Menu {
 	menu := &Menu{}
-	idle, _, err := ebitenutil.NewImageFromFile("./cmd/client/graphics/text-input-idle.png")
+	idle, err := imageByFilename("graphics/text-input-idle.png")
 	if err != nil {
 		panic(err)
 	}
