@@ -144,7 +144,7 @@ func (b *Registry) DeleteEntity(parentCtx context.Context, entity Entity) error 
 	logger.Debug("deleting entity")
 	idStr := strconv.FormatInt(int64(entity), 10)
 
-	allComponents := []proto.Message{&Position{}, &Render{}, &Looker{}, &Named{}, &Speaker{}}
+	allComponents := []proto.Message{&Position{}, &Render{}, &Looker{}, &Named{}, &Speaker{}, &Moveable{}, &Readable{}}
 	err := b.LoadComponents(ctx, entity, allComponents...)
 	if err != nil {
 		logger.Error("error loading components", zap.Error(err))

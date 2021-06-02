@@ -99,6 +99,9 @@ func (s *RedisStore) HReadProtos(ctx context.Context, key string, values ...prot
 		return err
 	}
 	for i, item := range res.Val() {
+		if item == nil {
+			continue
+		}
 		b := []byte(item.(string))
 		err := proto.Unmarshal(b, values[i])
 		if err != nil {
