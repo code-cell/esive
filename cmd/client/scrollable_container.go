@@ -9,24 +9,24 @@ import (
 )
 
 func NewScrollableContainer(content widget.PreferredSizeLocateableWidget) widget.PreferredSizeLocateableWidget {
-	listIdle, _, err := ebitenutil.NewImageFromFile("./cmd/client2/graphics/list-idle.png")
+	listIdle, _, err := ebitenutil.NewImageFromFile("./cmd/client/graphics/list-idle.png")
 	if err != nil {
 		panic(err)
 	}
 
-	mask, _, err := ebitenutil.NewImageFromFile("./cmd/client2/graphics/list-mask.png")
+	mask, _, err := ebitenutil.NewImageFromFile("./cmd/client/graphics/list-mask.png")
 	if err != nil {
 		panic(err)
 	}
-	trackIdle, _, err := ebitenutil.NewImageFromFile("./cmd/client2/graphics/slider-track-idle.png")
+	trackIdle, _, err := ebitenutil.NewImageFromFile("./cmd/client/graphics/slider-track-idle.png")
 	if err != nil {
 		panic(err)
 	}
-	handleIdle, _, err := ebitenutil.NewImageFromFile("./cmd/client2/graphics/slider-handle-idle.png")
+	handleIdle, _, err := ebitenutil.NewImageFromFile("./cmd/client/graphics/slider-handle-idle.png")
 	if err != nil {
 		panic(err)
 	}
-	handleHover, _, err := ebitenutil.NewImageFromFile("./cmd/client2/graphics/slider-handle-hover.png")
+	handleHover, _, err := ebitenutil.NewImageFromFile("./cmd/client/graphics/slider-handle-hover.png")
 	if err != nil {
 		panic(err)
 	}

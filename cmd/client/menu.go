@@ -19,7 +19,7 @@ type Menu struct {
 
 func NewMenu(ff font.Face) *Menu {
 	menu := &Menu{}
-	idle, _, err := ebitenutil.NewImageFromFile("./cmd/client2/graphics/text-input-idle.png")
+	idle, _, err := ebitenutil.NewImageFromFile("./cmd/client/graphics/text-input-idle.png")
 	if err != nil {
 		panic(err)
 	}
