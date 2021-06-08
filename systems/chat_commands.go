@@ -104,7 +104,7 @@ func (cm *ChatCommands) teleportCommand(ctx context.Context, tick int64, entity 
 		if err != nil {
 			panic(err)
 		}
-		cm.movement.Move(ctx, tick, entity, x-pos.X, y-pos.Y)
+		cm.movement.Teleport(ctx, tick, entity, x-pos.X, y-pos.Y)
 	})
 }
 
