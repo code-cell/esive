@@ -19,7 +19,7 @@ type VisionSystemLookItem struct {
 	Char  string
 	VelX  int64
 	VelY  int64
-	Color int32
+	Color uint32
 }
 
 type VisionSystemUpdater interface {

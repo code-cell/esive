@@ -82,12 +82,20 @@ func (g *WorldView) draw(screen *ebiten.Image) {
 			x = g.playerX
 			y = g.playerY
 		}
+
+		col := color.RGBA{
+			R: uint8(r.Color >> 24),
+			G: uint8(r.Color >> 16),
+			B: uint8(r.Color >> 8),
+			A: uint8(r.Color),
+		}
+
 		text.Draw(screen,
 			r.Char,
 			g.face,
 			int((x-g.playerX)+g.visibility)*int(cellWidth),
 			int((y-g.playerY)+g.visibility+1)*int(cellHeight),
-			color.White)
+			col)
 	}
 }
 

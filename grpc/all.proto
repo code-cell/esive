@@ -60,7 +60,7 @@ message Renderable {
   Position position = 2;
   Velocity velocity = 3;
   string char = 4;
-  int32 color = 5;
+  uint32 color = 5;
 }
 
 message ChatMessage {

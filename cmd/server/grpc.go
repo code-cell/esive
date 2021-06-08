@@ -87,7 +87,7 @@ func (s *server) Build(ctx context.Context, _ *esive_grpc.BuildReq) (*esive_grpc
 			panic(err)
 		}
 		err = s.registry.CreateComponents(ctx, entity,
-			&components.Render{Char: ".", Color: 0x00FF00},
+			&components.Render{Char: ".", Color: 0xdbec76ff},
 			pos,
 		)
 		if err != nil {
@@ -163,7 +163,7 @@ func (s *server) Join(ctx context.Context, req *esive_grpc.JoinReq) (*esive_grpc
 		&components.Position{X: rand.Int63n(10) - 5, Y: rand.Int63n(10) - 5},
 		&components.Moveable{},
 		&components.Speaker{Range: float32(*viewRadius)},
-		&components.Render{Char: "@", Color: 0xFF0000},
+		&components.Render{Char: "@", Color: 0x5bd54dff},
 		&components.Looker{Range: float32(*viewRadius)},
 	)
 	if err != nil {

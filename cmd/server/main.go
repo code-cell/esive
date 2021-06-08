@@ -111,7 +111,7 @@ func main() {
 						X: rand.Int63n(60) - 30,
 						Y: rand.Int63n(60) - 30,
 					},
-					&components.Render{Char: "#", Color: 0xff7f00},
+					&components.Render{Char: "#", Color: 0xaf8769ff},
 				)
 				if err != nil {
 					panic(err)
