@@ -78,7 +78,7 @@ func NewGame() *Game {
 		panic(err)
 	}
 
-	menu.TextInput.SendEvent.AddHandler(func(args interface{}) {
+	menu.textInput.SendEvent.AddHandler(func(args interface{}) {
 		eventArgs := args.(*TextInputSendEventArgs)
 		client.SendChatMessage(eventArgs.InputText)
 	})

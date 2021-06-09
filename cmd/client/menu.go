@@ -13,7 +13,8 @@ type Menu struct {
 	*widget.Container
 
 	chatText  *widget.Text
-	TextInput *TextInput
+	textInput *TextInput
+	vslider   *widget.Slider
 }
 
 func NewMenu(ff font.Face) *Menu {
@@ -23,7 +24,7 @@ func NewMenu(ff font.Face) *Menu {
 		panic(err)
 	}
 
-	menu.TextInput = NewTextInput(
+	menu.textInput = NewTextInput(
 		widget.TextInputOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
 			Stretch: true,
 		})),
@@ -63,8 +64,10 @@ func NewMenu(ff font.Face) *Menu {
 		widget.TextOpts.Position(widget.TextPositionStart, widget.TextPositionStart),
 	)
 
-	menu.Container.AddChild(NewScrollableContainer(menu.chatText))
-	menu.Container.AddChild(menu.TextInput)
+	scrollable, vslider := NewScrollableContainer(menu.chatText)
+	menu.Container.AddChild(scrollable)
+	menu.Container.AddChild(menu.textInput)
+	menu.vslider = vslider
 
 	menu.chatText.Label += "Welcome to Esive!\n"
 	menu.chatText.Label += "\n"
@@ -76,5 +79,6 @@ func NewMenu(ff font.Face) *Menu {
 }
 
 func (m *Menu) HandleChatMessage(from, message string) {
+	m.vslider.Current = m.vslider.Max
 	m.chatText.Label += fmt.Sprintf("%v: %v\n", from, message)
 }

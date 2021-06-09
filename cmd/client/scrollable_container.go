@@ -7,7 +7,7 @@ import (
 	"github.com/blizzy78/ebitenui/widget"
 )
 
-func NewScrollableContainer(content widget.PreferredSizeLocateableWidget) widget.PreferredSizeLocateableWidget {
+func NewScrollableContainer(content widget.PreferredSizeLocateableWidget) (widget.PreferredSizeLocateableWidget, *widget.Slider) {
 	listIdle, err := imageByFilename("graphics/list-idle.png")
 	if err != nil {
 		panic(err)
@@ -83,6 +83,8 @@ func NewScrollableContainer(content widget.PreferredSizeLocateableWidget) widget
 			Bottom: 24,
 		}),
 	)
+	vSlider.Current = vSlider.Max
+	scrollContainer.ScrollTop = 1
 	container.AddChild(vSlider)
 
 	scrollContainer.GetWidget().ScrolledEvent.AddHandler(func(args interface{}) {
@@ -119,5 +121,5 @@ func NewScrollableContainer(content widget.PreferredSizeLocateableWidget) widget
 		}),
 	)
 	container.AddChild(hSlider)
-	return container
+	return container, vSlider
 }
