@@ -171,12 +171,6 @@ func (c *Client) Disonnect() error {
 	return nil
 }
 
-func (c *Client) Renderables() map[int64]*esive_grpc.Renderable {
-	// c.renderablesMtx.Lock()
-	// defer c.renderablesMtx.Unlock()
-	return c.renderables
-}
-
 func (c *Client) UpdateRenderable(tick int64, renderable *esive_grpc.Renderable) {
 	c.renderablesMtx.Lock()
 	defer c.renderablesMtx.Unlock()

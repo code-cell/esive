@@ -71,10 +71,12 @@ func (g *WorldView) draw(screen *ebiten.Image) {
 	cellWidth := float64(r.Bounds().Dx()) / float64(g.width)
 	cellHeight := float64(r.Bounds().Dy()) / float64(g.height)
 
-	renderables := g.client.Renderables()
-
 	g.playerX, g.playerY = g.prediction.GetPredictedPlayerPosition(g.client.tick.Current())
 
+	g.client.renderablesMtx.Lock()
+	defer g.client.renderablesMtx.Unlock()
+
+	renderables := g.client.renderables
 	for id, r := range renderables {
 		x := r.Position.X
 		y := r.Position.Y

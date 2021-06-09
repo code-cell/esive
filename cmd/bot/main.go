@@ -5,39 +5,65 @@ import (
 	"flag"
 	"fmt"
 	"math/rand"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
 	"time"
 
 	esive_grpc "github.com/code-cell/esive/grpc"
+	"github.com/code-cell/esive/tick"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
-var bots = flag.Int("bots", 1000, "")
+var bots = flag.Int("bots", 10, "")
 
 func main() {
 	flag.Parse()
 
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
 	for i := 0; i < *bots; i++ {
+		os.Stdout.Write([]byte("."))
 		runBot(i)
 	}
+	fmt.Println("All bots running.")
 
-	time.Sleep(200000 * time.Second)
+	<-sigs
 }
 
 func runBot(n int) {
 	name := fmt.Sprintf("Bot %d", n)
-	conn, err := grpc.Dial("localhost:9000", grpc.WithInsecure())
+
+	var t *tick.Tick
+	conn, err := grpc.Dial("localhost:9000",
+		grpc.WithInsecure(),
+		grpc.WithChainUnaryInterceptor(
+			func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+				if t != nil {
+					ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("tick", strconv.FormatInt(t.Current(), 10)))
+				}
+				return invoker(ctx, method, req, reply, cc, opts...)
+			}),
+	)
 	if err != nil {
 		panic(err)
 	}
 
 	client := esive_grpc.NewEsiveClient(conn)
 
-	_, err = client.Join(context.Background(), &esive_grpc.JoinReq{
+	var md metadata.MD
+	joinRes, err := client.Join(context.Background(), &esive_grpc.JoinReq{
 		Name: name,
-	})
+	}, grpc.Header(&md))
 	if err != nil {
 		panic(err)
 	}
+	serverTick := getTickFromMD(md)
+	t = tick.NewTick(serverTick+3, time.Duration(joinRes.TickMilliseconds)*time.Millisecond)
+	go t.Start()
 
 	visRes, err := client.VisibilityUpdates(context.Background(), &esive_grpc.VisibilityUpdatesReq{})
 	if err != nil {
@@ -52,7 +78,6 @@ func runBot(n int) {
 
 func handleBot(client esive_grpc.EsiveClient, name string, visRes esive_grpc.Esive_VisibilityUpdatesClient, chatRes esive_grpc.Esive_ChatUpdatesClient) {
 	go func() {
-
 		for {
 			_, err := visRes.Recv()
 			if err != nil {
@@ -79,9 +104,8 @@ func handleBot(client esive_grpc.EsiveClient, name string, visRes esive_grpc.Esi
 		}
 	}()
 
-	time.Sleep(10000 * time.Second)
 	for {
-		time.Sleep(time.Duration(rand.Intn(10000)+1000) * time.Millisecond)
+		time.Sleep(time.Duration(rand.Intn(7)+3) * time.Second)
 		x := rand.Int63n(3) - 1
 		y := rand.Int63n(3) - 1
 		_, err := client.SetVelocity(context.Background(), &esive_grpc.Velocity{X: x, Y: y})
@@ -89,4 +113,16 @@ func handleBot(client esive_grpc.EsiveClient, name string, visRes esive_grpc.Esi
 			panic(err)
 		}
 	}
+}
+
+func getTickFromMD(md metadata.MD) int64 {
+	str, found := md["tick"]
+	if !found || len(str) == 0 {
+		panic("Invalid tick from the server metadata")
+	}
+	serverTick, err := strconv.ParseInt(str[0], 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	return serverTick
 }
