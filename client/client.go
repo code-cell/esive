@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"context"
@@ -15,9 +15,9 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-type NewLineHandler interface {
-	HandleChatMessage(string, string)
-}
+type ChatMessageHandler func(from, message string)
+type UpdateRenderableHandler func(id, tick int64, renderable *esive_grpc.Renderable)
+type DeleteRenderableHandler func(id, tick int64)
 
 type ClientOpts struct {
 	addr string
@@ -27,28 +27,51 @@ type ClientOpts struct {
 type Client struct {
 	opts ClientOpts
 
-	tick *tick.Tick
+	Tick *tick.Tick
 
 	grpcConn    *grpc.ClientConn
 	esiveClient esive_grpc.EsiveClient
 
-	PlayerID       int64
-	renderablesMtx sync.Mutex
-	renderables    map[int64]*esive_grpc.Renderable
-	prediction     *Prediction
-	chatHandler    NewLineHandler
+	PlayerID int64
+
+	chatMessageHandlersMtx sync.Mutex
+	chatMessageHandlers    []ChatMessageHandler
+
+	updateRenderableHandlersMtx sync.Mutex
+	updateRenderableHandlers    []UpdateRenderableHandler
+
+	deleteRenderableHandlersMtx sync.Mutex
+	deleteRenderableHandlers    []DeleteRenderableHandler
 }
 
-func NewClient(addr, name string, prediction *Prediction, chatHandler NewLineHandler) *Client {
+func NewClient(addr, name string) *Client {
 	return &Client{
 		opts: ClientOpts{
 			addr: addr,
 			name: name,
 		},
-		renderables: make(map[int64]*esive_grpc.Renderable),
-		prediction:  prediction,
-		chatHandler: chatHandler,
+		chatMessageHandlers:      make([]ChatMessageHandler, 0),
+		updateRenderableHandlers: make([]UpdateRenderableHandler, 0),
+		deleteRenderableHandlers: make([]DeleteRenderableHandler, 0),
 	}
+}
+
+func (c *Client) AddChatHandler(h ChatMessageHandler) {
+	c.chatMessageHandlersMtx.Lock()
+	defer c.chatMessageHandlersMtx.Unlock()
+	c.chatMessageHandlers = append(c.chatMessageHandlers, h)
+}
+
+func (c *Client) AddUpdateRenderableHandler(h UpdateRenderableHandler) {
+	c.updateRenderableHandlersMtx.Lock()
+	defer c.updateRenderableHandlersMtx.Unlock()
+	c.updateRenderableHandlers = append(c.updateRenderableHandlers, h)
+}
+
+func (c *Client) AddDeleteRenderableHandler(h DeleteRenderableHandler) {
+	c.deleteRenderableHandlersMtx.Lock()
+	defer c.deleteRenderableHandlersMtx.Unlock()
+	c.deleteRenderableHandlers = append(c.deleteRenderableHandlers, h)
 }
 
 func (c *Client) Connect() error {
@@ -61,8 +84,8 @@ func (c *Client) Connect() error {
 		grpc.WithChainUnaryInterceptor(
 			// Set client tick in the request header
 			func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-				if c.tick != nil {
-					ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("tick", strconv.FormatInt(c.tick.Current(), 10)))
+				if c.Tick != nil {
+					ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("tick", strconv.FormatInt(c.Tick.Current(), 10)))
 				}
 				return invoker(ctx, method, req, reply, cc, opts...)
 			},
@@ -72,12 +95,12 @@ func (c *Client) Connect() error {
 				opts = append(opts, grpc.Header(&md))
 				err := invoker(ctx, method, req, reply, cc, opts...)
 				receivedTick, found := c.getTickFromMD(md)
-				if found && c.tick != nil {
-					log := log.With(zap.Int64("serverTick", receivedTick), zap.Int64("clientTick", c.tick.Current()))
-					current := c.tick.Current()
+				if found && c.Tick != nil {
+					log := log.With(zap.Int64("serverTick", receivedTick), zap.Int64("clientTick", c.Tick.Current()))
+					current := c.Tick.Current()
 					if current < receivedTick+1 || current > receivedTick+5 {
 						log.Warn("adjusting tick")
-						c.tick.Adjust(receivedTick + 3)
+						c.Tick.Adjust(receivedTick + 3)
 					}
 					// log.Debug("received tick from the server")
 				}
@@ -135,7 +158,11 @@ func (c *Client) Connect() error {
 				fmt.Println(err.Error())
 				return
 			}
-			c.chatHandler.HandleChatMessage(e.Message.From, e.Message.Text)
+			c.chatMessageHandlersMtx.Lock()
+			for _, h := range c.chatMessageHandlers {
+				h(e.Message.From, e.Message.Text)
+			}
+			c.chatMessageHandlersMtx.Unlock()
 		}
 	}()
 
@@ -160,11 +187,11 @@ func (c *Client) initTickFromMD(md metadata.MD, durationMs int32) {
 		panic("Didn't receive a tick from the server on the Join call.")
 	}
 
-	c.tick = tick.NewTick(serverTick+3, time.Duration(durationMs)*time.Millisecond)
-	go c.tick.Start()
+	c.Tick = tick.NewTick(serverTick+3, time.Duration(durationMs)*time.Millisecond)
+	go c.Tick.Start()
 }
 
-func (c *Client) Disonnect() error {
+func (c *Client) Disconnect() error {
 	if err := c.grpcConn.Close(); err != nil {
 		return err
 	}
@@ -172,18 +199,21 @@ func (c *Client) Disonnect() error {
 }
 
 func (c *Client) UpdateRenderable(tick int64, renderable *esive_grpc.Renderable) {
-	c.renderablesMtx.Lock()
-	defer c.renderablesMtx.Unlock()
-	c.renderables[renderable.Id] = renderable
-	if renderable.Id == c.PlayerID {
-		c.prediction.UpdatePlayerPositionFromServer(tick, renderable.Position.X, renderable.Position.Y, renderable.Velocity.X, renderable.Velocity.Y)
+	c.updateRenderableHandlersMtx.Lock()
+	defer c.updateRenderableHandlersMtx.Unlock()
+
+	for _, h := range c.updateRenderableHandlers {
+		h(renderable.Id, tick, renderable)
 	}
 }
 
 func (c *Client) DeleteRenderable(tick int64, id int64) {
-	c.renderablesMtx.Lock()
-	defer c.renderablesMtx.Unlock()
-	delete(c.renderables, id)
+	c.deleteRenderableHandlersMtx.Lock()
+	defer c.deleteRenderableHandlersMtx.Unlock()
+
+	for _, h := range c.deleteRenderableHandlers {
+		h(id, tick)
+	}
 }
 
 func (c *Client) SetVelocity(x, y int) {

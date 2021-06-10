@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"image"
@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/blizzy78/ebitenui/widget"
+	"github.com/code-cell/esive/client"
 	esive_grpc "github.com/code-cell/esive/grpc"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
@@ -20,7 +21,7 @@ type WorldView struct {
 	height int
 
 	face       font.Face
-	client     *Client
+	client     *client.Client
 	prediction *Prediction
 
 	mtx         sync.Mutex
@@ -33,7 +34,7 @@ type WorldView struct {
 	focused bool
 }
 
-func NewWorldView(width, height int, client *Client, prediction *Prediction, visibility int64) *WorldView {
+func NewWorldView(width, height int, c *client.Client, prediction *Prediction, visibility int64) *WorldView {
 	// tt, err := opentype.Parse(gomono.TTF)
 	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
 	if err != nil {
@@ -46,12 +47,12 @@ func NewWorldView(width, height int, client *Client, prediction *Prediction, vis
 		Hinting: font.HintingFull,
 	})
 
-	return &WorldView{
+	wv := &WorldView{
 		width:  width,
 		height: height,
 
 		face:       ff,
-		client:     client,
+		client:     c,
 		prediction: prediction,
 		visibility: visibility,
 
@@ -59,6 +60,23 @@ func NewWorldView(width, height int, client *Client, prediction *Prediction, vis
 
 		widget: widget.NewWidget(),
 	}
+
+	c.AddUpdateRenderableHandler(func(id, tick int64, renderable *esive_grpc.Renderable) {
+		wv.mtx.Lock()
+		defer wv.mtx.Unlock()
+		wv.renderables[id] = renderable
+		if id == c.PlayerID {
+			prediction.UpdatePlayerPositionFromServer(tick, renderable.Position.X, renderable.Position.Y, renderable.Velocity.X, renderable.Velocity.Y)
+		}
+	})
+
+	c.AddDeleteRenderableHandler(func(id, tick int64) {
+		wv.mtx.Lock()
+		defer wv.mtx.Unlock()
+		delete(wv.renderables, id)
+	})
+
+	return wv
 }
 
 func (g *WorldView) Render(screen *ebiten.Image, def widget.DeferredRenderFunc) {
@@ -71,13 +89,12 @@ func (g *WorldView) draw(screen *ebiten.Image) {
 	cellWidth := float64(r.Bounds().Dx()) / float64(g.width)
 	cellHeight := float64(r.Bounds().Dy()) / float64(g.height)
 
-	g.playerX, g.playerY = g.prediction.GetPredictedPlayerPosition(g.client.tick.Current())
+	g.playerX, g.playerY = g.prediction.GetPredictedPlayerPosition(g.client.Tick.Current())
 
-	g.client.renderablesMtx.Lock()
-	defer g.client.renderablesMtx.Unlock()
+	g.mtx.Lock()
+	defer g.mtx.Unlock()
 
-	renderables := g.client.renderables
-	for id, r := range renderables {
+	for id, r := range g.renderables {
 		x := r.Position.X
 		y := r.Position.Y
 		if id == g.client.PlayerID {
