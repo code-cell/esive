@@ -31,7 +31,7 @@ var (
 	redisFlush          = flag.Bool("redis-flush", true, "If enabled, it empties all database when the server starts")
 	jeagerEndpoint      = flag.String("jaeger-endpoint", "http://localhost:14268/api/traces", "Jaeger collector endpoint")
 	natsURL             = flag.String("nats-url", "", "NATS server url")
-	tickDuration        = flag.Duration("tick", 1*time.Second, "Tick duration")
+	tickDuration        = flag.Duration("tick", 300*time.Millisecond, "Tick duration")
 )
 
 func main() {

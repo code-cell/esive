@@ -3,13 +3,13 @@ package client
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
 	"sync"
 	"time"
 
 	esive_grpc "github.com/code-cell/esive/grpc"
 	"github.com/code-cell/esive/tick"
-	"go.uber.org/zap"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -27,7 +27,8 @@ type ClientOpts struct {
 type Client struct {
 	opts ClientOpts
 
-	Tick *tick.Tick
+	Tick           *tick.Tick
+	latencyTracker *latencyTracker
 
 	grpcConn    *grpc.ClientConn
 	esiveClient esive_grpc.EsiveClient
@@ -50,6 +51,7 @@ func NewClient(addr, name string) *Client {
 			addr: addr,
 			name: name,
 		},
+		latencyTracker:           newLatencyTracker(10),
 		chatMessageHandlers:      make([]ChatMessageHandler, 0),
 		updateRenderableHandlers: make([]UpdateRenderableHandler, 0),
 		deleteRenderableHandlers: make([]DeleteRenderableHandler, 0),
@@ -75,13 +77,19 @@ func (c *Client) AddDeleteRenderableHandler(h DeleteRenderableHandler) {
 }
 
 func (c *Client) Connect() error {
-	log, err := zap.NewDevelopment()
-	if err != nil {
-		return err
-	}
+	// log, err := zap.NewDevelopment()
+	// if err != nil {
+	// 	return err
+	// }
 	conn, err := grpc.Dial(c.opts.addr,
 		grpc.WithInsecure(),
 		grpc.WithChainUnaryInterceptor(
+			func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+				from := time.Now()
+				err := invoker(ctx, method, req, reply, cc, opts...)
+				c.latencyTracker.addLatency(time.Since(from))
+				return err
+			},
 			// Set client tick in the request header
 			func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 				if c.Tick != nil {
@@ -96,13 +104,7 @@ func (c *Client) Connect() error {
 				err := invoker(ctx, method, req, reply, cc, opts...)
 				receivedTick, found := c.getTickFromMD(md)
 				if found && c.Tick != nil {
-					log := log.With(zap.Int64("serverTick", receivedTick), zap.Int64("clientTick", c.Tick.Current()))
-					current := c.Tick.Current()
-					if current < receivedTick+1 || current > receivedTick+5 {
-						log.Warn("adjusting tick")
-						c.Tick.Adjust(receivedTick + 3)
-					}
-					// log.Debug("received tick from the server")
+					c.adjustLatency(receivedTick)
 				}
 				return err
 			},
@@ -139,9 +141,9 @@ func (c *Client) Connect() error {
 			}
 			switch e.Action {
 			case esive_grpc.VisibilityUpdatesRes_ADD:
-				c.UpdateRenderable(e.Tick, e.Renderable)
+				c.updateRenderable(e.Tick, e.Renderable)
 			case esive_grpc.VisibilityUpdatesRes_REMOVE:
-				c.DeleteRenderable(e.Tick, e.Renderable.Id)
+				c.deleteRenderable(e.Tick, e.Renderable.Id)
 			}
 		}
 	}()
@@ -198,7 +200,7 @@ func (c *Client) Disconnect() error {
 	return nil
 }
 
-func (c *Client) UpdateRenderable(tick int64, renderable *esive_grpc.Renderable) {
+func (c *Client) updateRenderable(tick int64, renderable *esive_grpc.Renderable) {
 	c.updateRenderableHandlersMtx.Lock()
 	defer c.updateRenderableHandlersMtx.Unlock()
 
@@ -207,12 +209,37 @@ func (c *Client) UpdateRenderable(tick int64, renderable *esive_grpc.Renderable)
 	}
 }
 
-func (c *Client) DeleteRenderable(tick int64, id int64) {
+func (c *Client) deleteRenderable(tick int64, id int64) {
 	c.deleteRenderableHandlersMtx.Lock()
 	defer c.deleteRenderableHandlersMtx.Unlock()
 
 	for _, h := range c.deleteRenderableHandlers {
 		h(id, tick)
+	}
+}
+
+func (c *Client) adjustLatency(serverTick int64) {
+	clientTick := c.Tick.Current()
+	latency := c.latencyTracker.avg
+	tickDuration := c.Tick.Delay
+
+	// We want players living at a tick that is 3 times their 'normal' latency with the server.
+	desiredLatency := 3 * latency
+
+	// How many extra ticks the player should live in.
+	desiredTicks := int64(math.Ceil(float64(desiredLatency) / float64(tickDuration)))
+	if desiredTicks < 2 {
+		// We don't want to be too close to the server. Being 1 tick away is risky as technically our ticks are not in sync and might have overlap:
+		// Client tick:     ---A---5-B-------6------
+		// Server tick:     4--A-----B-5---------6--
+		// At `A`, it shows as 1 tick ahead, but at `B` both client and server are on the same tick.
+		desiredTicks = 2
+	}
+
+	desiredClientTick := serverTick + desiredTicks
+
+	if desiredClientTick != clientTick {
+		c.Tick.Adjust(desiredClientTick)
 	}
 }
 
