@@ -11,9 +11,11 @@ type Tick struct {
 	Delay time.Duration
 
 	current    int64
-	adjustment int64
+	adjustment int32
 
 	ticker *time.Ticker
+	part   int8
+	parts  int8
 	done   chan struct{}
 
 	subscribersMtx sync.Mutex
@@ -24,6 +26,7 @@ func NewTick(current int64, delay time.Duration) *Tick {
 	return &Tick{
 		Delay:       delay,
 		current:     current,
+		parts:       4,
 		done:        make(chan struct{}),
 		subscribers: make([]func(context.Context, int64), 0),
 	}
@@ -33,34 +36,38 @@ func (tick *Tick) Current() int64 {
 	return atomic.LoadInt64(&tick.current)
 }
 
-// Adjust makes the next tick be `newVal+1`. It doesn't change the current tick because other processes might need to be consistent with the tick number.
-func (tick *Tick) Adjust(newVal int64) {
-	atomic.SwapInt64(&tick.adjustment, newVal)
+// AdjustOnce Speeds up or slows down (by 1/4th of the tick) the tick for one single click towards the desired newVal
+func (tick *Tick) AdjustOnce(newVal int64) {
+	current := tick.Current()
+	if newVal == current {
+		return
+	}
+	if newVal > current {
+		atomic.StoreInt32(&tick.adjustment, 1) // Speed up
+	} else {
+		atomic.StoreInt32(&tick.adjustment, -1) // Slow down
+	}
 }
 
 func (tick *Tick) Start() {
-	tick.ticker = time.NewTicker(tick.Delay)
-
+	tick.ticker = time.NewTicker(tick.Delay / time.Duration(tick.parts))
 	for {
 		select {
 		case <-tick.done:
 			return
 		case <-tick.ticker.C:
-			tick.tickOnce()
+			tick.part += 1 + int8(atomic.LoadInt32(&tick.adjustment))
+			atomic.StoreInt32(&tick.adjustment, 0)
+			if tick.part >= tick.parts {
+				tick.part -= tick.parts
+				tick.tickOnce()
+			}
 		}
 	}
 }
 
 func (tick *Tick) tickOnce() {
-	var next int64
-	adj := atomic.LoadInt64(&tick.adjustment)
-	if adj > 0 {
-		next = adj + 1
-		atomic.SwapInt64(&tick.current, next)
-		atomic.SwapInt64(&tick.adjustment, 0)
-	} else {
-		next = atomic.AddInt64(&tick.current, 1)
-	}
+	next := atomic.AddInt64(&tick.current, 1)
 	now := time.Now()
 	deadline := now.Add(tick.Delay)
 

@@ -20,19 +20,52 @@ func TestTick(t *testing.T) {
 	require.Equal(t, int64(2), tick.Current())
 }
 
-func TestTick_Adjust(t *testing.T) {
+func TestTick_Adjust_SlowDown(t *testing.T) {
 	tick := NewTick(0, 100*time.Millisecond)
 	require.Equal(t, int64(0), tick.Current())
 
-	tick.Adjust(10)
+	durations := []time.Duration{}
+	lastTick := time.Now()
+	tick.AddSubscriber(func(c context.Context, i int64) {
+		durations = append(durations, time.Since(lastTick))
+		lastTick = time.Now()
+		if i == 2 {
+			tick.AdjustOnce(1) // slow towards tick 1 by 1/4 once
+		}
+	})
+
 	go tick.Start()
 
-	time.Sleep(20 * time.Millisecond) // move in time, but doesn't finish the current tick
+	time.Sleep(400 * time.Millisecond) // 4 ticks
+	tick.Stop()
+
+	require.InDelta(t, int64(100), durations[0].Milliseconds(), float64(5))
+	require.InDelta(t, int64(100), durations[1].Milliseconds(), float64(5))
+	require.InDelta(t, int64(125), durations[2].Milliseconds(), float64(5))
+}
+
+func TestTick_Adjust_SpeedUp(t *testing.T) {
+	tick := NewTick(0, 100*time.Millisecond)
 	require.Equal(t, int64(0), tick.Current())
 
-	time.Sleep(100 * time.Millisecond) // 1 tick
+	durations := []time.Duration{}
+	lastTick := time.Now()
+	tick.AddSubscriber(func(c context.Context, i int64) {
+		durations = append(durations, time.Since(lastTick))
+		lastTick = time.Now()
+		if i == 2 {
+			tick.AdjustOnce(3) // speed up towards tick 3 by 1/4 once
+		}
+	})
+
+	go tick.Start()
+
+	time.Sleep(400 * time.Millisecond) // 4 ticks
 	tick.Stop()
-	require.Equal(t, int64(11), tick.Current())
+
+	require.InDelta(t, int64(100), durations[0].Milliseconds(), float64(5))
+	require.InDelta(t, int64(100), durations[1].Milliseconds(), float64(5))
+	require.InDelta(t, int64(75), durations[2].Milliseconds(), float64(5))
 }
 
 func TestTickSubscribers(t *testing.T) {
@@ -46,9 +79,10 @@ func TestTickSubscribers(t *testing.T) {
 		called = true
 	})
 	go tick.Start()
-	time.Sleep(101 * time.Millisecond) // 1 tick
+	require.Eventually(t, func() bool {
+		return called
+	}, 200*time.Millisecond, 5*time.Millisecond)
 	tick.Stop()
-	require.True(t, called)
 }
 
 func TestTickSubscribers_TakeTooLong_CallsAllTicksAnyway(t *testing.T) {

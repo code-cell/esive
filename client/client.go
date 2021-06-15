@@ -104,7 +104,7 @@ func (c *Client) Connect() error {
 				err := invoker(ctx, method, req, reply, cc, opts...)
 				receivedTick, found := c.getTickFromMD(md)
 				if found && c.Tick != nil {
-					c.adjustLatency(receivedTick)
+					c.Tick.AdjustOnce(c.desiredClientTick(receivedTick, c.Tick.Delay))
 				}
 				return err
 			},
@@ -189,7 +189,8 @@ func (c *Client) initTickFromMD(md metadata.MD, durationMs int32) {
 		panic("Didn't receive a tick from the server on the Join call.")
 	}
 
-	c.Tick = tick.NewTick(serverTick+3, time.Duration(durationMs)*time.Millisecond)
+	duration := time.Duration(durationMs) * time.Millisecond
+	c.Tick = tick.NewTick(c.desiredClientTick(serverTick, duration), duration)
 	go c.Tick.Start()
 }
 
@@ -218,29 +219,24 @@ func (c *Client) deleteRenderable(tick int64, id int64) {
 	}
 }
 
-func (c *Client) adjustLatency(serverTick int64) {
-	clientTick := c.Tick.Current()
+func (c *Client) desiredClientTick(serverTick int64, tickDuration time.Duration) int64 {
 	latency := c.latencyTracker.avg
-	tickDuration := c.Tick.Delay
 
 	// We want players living at a tick that is 3 times their 'normal' latency with the server.
-	desiredLatency := 3 * latency
+	latencyTolerance := 3 * latency
 
 	// How many extra ticks the player should live in.
-	desiredTicks := int64(math.Ceil(float64(desiredLatency) / float64(tickDuration)))
-	if desiredTicks < 2 {
+	desiredTicksAhead := int64(math.Ceil(float64(latencyTolerance) / float64(tickDuration)))
+	if desiredTicksAhead < 2 {
 		// We don't want to be too close to the server. Being 1 tick away is risky as technically our ticks are not in sync and might have overlap:
 		// Client tick:     ---A---5-B-------6------
 		// Server tick:     4--A-----B-5---------6--
 		// At `A`, it shows as 1 tick ahead, but at `B` both client and server are on the same tick.
-		desiredTicks = 2
+		desiredTicksAhead = 2
 	}
 
-	desiredClientTick := serverTick + desiredTicks
-
-	if desiredClientTick != clientTick {
-		c.Tick.Adjust(desiredClientTick)
-	}
+	desiredClientTick := serverTick + desiredTicksAhead
+	return desiredClientTick
 }
 
 func (c *Client) SetVelocity(x, y int) {
