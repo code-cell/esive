@@ -79,39 +79,84 @@ func (s *MovementSystem) Teleport(parentContext context.Context, tick int64, ent
 
 func (s *MovementSystem) MoveAllMoveables(parentContext context.Context, tick int64) error {
 	// TODO: The core logic of this is duplicated
-	ctx, span := movementTracer.Start(parentContext, "movement.MoveAll")
+	ctx, span := movementTracer.Start(parentContext, "movement.MoveAllMoveables")
 	defer span.End()
 
-	entities, extras, err := registry.EntitiesWithComponentType(ctx, &components.Moveable{}, &components.Moveable{}, &components.Position{})
+	// Phase 1: Plan movements
+	movingEntities, movingEntitiesExtras, err := registry.EntitiesWithComponentType(ctx, &components.Moveable{}, &components.Moveable{}, &components.Position{})
 	if err != nil {
 		panic(err)
 	}
 
-	for i, entity := range entities {
-		mov := extras[i][0].(*components.Moveable)
-		pos := extras[i][1].(*components.Position)
+	plannedMovements := map[int64]map[int64]components.Entity{}
+	plannedMovingEntities := map[components.Entity]int{}
+
+	for i, entity := range movingEntities {
+		mov := movingEntitiesExtras[i][0].(*components.Moveable)
+		pos := movingEntitiesExtras[i][1].(*components.Position)
 		if mov.VelX == 0 && mov.VelY == 0 {
 			continue
 		}
+		newX := pos.X + mov.VelX
+		newY := pos.Y + mov.VelY
 
-		newPos := &components.Position{
-			X: pos.X + mov.VelX,
-			Y: pos.Y + mov.VelY,
+		_, found := plannedMovements[newX]
+		if !found {
+			plannedMovements[newX] = map[int64]components.Entity{}
 		}
-		oldPos := &components.Position{
-			X: pos.X,
-			Y: pos.Y,
+		_, found = plannedMovements[newX][newY]
+		if found {
+			// Another entity is moving there
+			// TODO: Revert client action
+			continue
+		}
+		plannedMovements[newX][newY] = entity
+		plannedMovingEntities[entity] = i
+	}
+
+	// Phase 2: Check collisions
+	allEntities, allExtras, err := registry.EntitiesWithComponentType(ctx, &components.Position{}, &components.Position{})
+	if err != nil {
+		panic(err)
+	}
+
+	for i, entity := range allEntities {
+		pos := allExtras[i][0].(*components.Position)
+		if _, found := plannedMovingEntities[entity]; found {
+			// The entity is moving somewhere else so we don't need to check anyting at this iteration.
+			// We'll check the collision when we process the other entity
+			continue
 		}
 
-		pos.X += mov.VelX
-		pos.Y += mov.VelY
-
-		registry.UpdateComponents(ctx, entity, pos)
-		err = s.visionSystem.HandleMovement(ctx, tick, entity, mov, oldPos, newPos)
-		if err != nil {
-			panic(err)
+		_, found := plannedMovements[pos.X]
+		if !found {
+			// No entities are moving here
+			continue
 		}
-		geo.OnMovePosition(ctx, entity, oldPos, newPos)
+		movingEntity, found := plannedMovements[pos.X][pos.Y]
+		if !found {
+			// No entities are moving here
+			continue
+		}
+
+		delete(plannedMovements[pos.X], pos.Y)
+		delete(plannedMovingEntities, movingEntity)
+	}
+
+	// Phase 3: Apply movements
+	for x, row := range plannedMovements {
+		for y, entity := range row {
+			mov := movingEntitiesExtras[plannedMovingEntities[entity]][0].(*components.Moveable)
+			oldPos := movingEntitiesExtras[plannedMovingEntities[entity]][1].(*components.Position)
+			newPos := &components.Position{X: x, Y: y}
+
+			registry.UpdateComponents(ctx, entity, newPos)
+			err = s.visionSystem.HandleMovement(ctx, tick, entity, mov, oldPos, newPos)
+			if err != nil {
+				panic(err)
+			}
+			geo.OnMovePosition(ctx, entity, oldPos, newPos)
+		}
 	}
 
 	return nil
