@@ -37,6 +37,15 @@ func (s *MovementSystem) SetVelocity(parentContext context.Context, tick int64, 
 	if err != nil {
 		panic(err)
 	}
+	if velX == 0 && velY == 0 {
+		// send movement because the movement system skips non-moving entities
+		pos := &components.Position{}
+		err := registry.LoadComponents(ctx, entity, pos)
+		if err != nil {
+			panic(err)
+		}
+		err = s.visionSystem.HandleMovement(ctx, tick, entity, mov, pos, pos)
+	}
 	return nil
 }
 
@@ -138,7 +147,11 @@ func (s *MovementSystem) MoveAllMoveables(parentContext context.Context, tick in
 			// No entities are moving here
 			continue
 		}
-
+		registry.UpdateComponents(ctx, movingEntity, &components.Moveable{})
+		err = s.visionSystem.HandleMovement(ctx, tick, movingEntity, &components.Moveable{}, movingEntitiesExtras[plannedMovingEntities[movingEntity]][1].(*components.Position), movingEntitiesExtras[plannedMovingEntities[movingEntity]][1].(*components.Position))
+		if err != nil {
+			panic(err)
+		}
 		delete(plannedMovements[pos.X], pos.Y)
 		delete(plannedMovingEntities, movingEntity)
 	}
