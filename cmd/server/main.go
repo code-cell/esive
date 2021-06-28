@@ -40,7 +40,11 @@ func main() {
 	flush := initTracer()
 	defer flush()
 
-	logger, err := zap.NewDevelopment()
+	logConfig := zap.NewDevelopmentConfig()
+	logConfig.OutputPaths = []string{
+		"server.log",
+	}
+	logger, err := logConfig.Build()
 	if err != nil {
 		panic(err)
 	}
@@ -120,7 +124,11 @@ func main() {
 		}()
 	}
 
-	grpcServer(actionsQueue, registry, geo, vision, movement, chat, t)
+	s := newServer(actionsQueue, registry, geo, vision, movement, chat, t)
+	go s.Serve()
+
+	repl := NewRepl(s)
+	repl.Run()
 }
 
 // initTracer creates a new trace provider instance and registers it as global trace provider.

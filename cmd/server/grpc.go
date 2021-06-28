@@ -41,6 +41,20 @@ type server struct {
 	players    map[string]*PlayerData
 }
 
+func newServer(actionsQueue *actions.ActionsQueue, registry *components.Registry, geo *components.Geo, vision *systems.VisionSystem, movement *systems.MovementSystem, chat *systems.ChatSystem, t *tick.Tick) *server {
+	s := &server{
+		actionsQueue: actionsQueue,
+		registry:     registry,
+		geo:          geo,
+		vision:       vision,
+		movement:     movement,
+		chat:         chat,
+		tick:         t,
+		players:      map[string]*PlayerData{},
+	}
+	return s
+}
+
 func getTickFromCtx(ctx context.Context) (int64, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -279,20 +293,10 @@ func (s *server) playerData(ctx context.Context) *PlayerData {
 	return s.players[playerID]
 }
 
-func grpcServer(actionsQueue *actions.ActionsQueue, registry *components.Registry, geo *components.Geo, vision *systems.VisionSystem, movement *systems.MovementSystem, chat *systems.ChatSystem, t *tick.Tick) {
+func (s *server) Serve() {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 9000))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
-	}
-	s := &server{
-		actionsQueue: actionsQueue,
-		registry:     registry,
-		geo:          geo,
-		vision:       vision,
-		movement:     movement,
-		chat:         chat,
-		tick:         t,
-		players:      map[string]*PlayerData{},
 	}
 	grpcServer := grpc.NewServer(
 		grpc.StatsHandler(&serverStats{s}),
