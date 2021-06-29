@@ -64,8 +64,8 @@ func (s *MovementSystem) Teleport(parentContext context.Context, tick int64, ent
 		panic(err)
 	}
 	newPos := &components.Position{
-		X: pos.X + newX,
-		Y: pos.Y + newY,
+		X: newX,
+		Y: newY,
 	}
 	oldPos := &components.Position{
 		X: pos.X,

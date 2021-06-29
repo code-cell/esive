@@ -124,10 +124,10 @@ func main() {
 		}()
 	}
 
-	s := newServer(actionsQueue, registry, geo, vision, movement, chat, t)
+	s := newServer(logger, actionsQueue, registry, geo, vision, movement, chat, t)
 	go s.Serve()
 
-	repl := NewRepl(s)
+	repl := NewRepl(s, t, movement)
 	repl.Run()
 }
 

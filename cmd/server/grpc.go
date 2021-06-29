@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
 	"net"
 	"strconv"
@@ -17,6 +16,7 @@ import (
 	"github.com/code-cell/esive/tick"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/stats"
@@ -36,12 +36,13 @@ type server struct {
 	movement     *systems.MovementSystem
 	chat         *systems.ChatSystem
 	tick         *tick.Tick
+	logger       *zap.Logger
 
 	playersMtx sync.Mutex
 	players    map[string]*PlayerData
 }
 
-func newServer(actionsQueue *actions.ActionsQueue, registry *components.Registry, geo *components.Geo, vision *systems.VisionSystem, movement *systems.MovementSystem, chat *systems.ChatSystem, t *tick.Tick) *server {
+func newServer(logger *zap.Logger, actionsQueue *actions.ActionsQueue, registry *components.Registry, geo *components.Geo, vision *systems.VisionSystem, movement *systems.MovementSystem, chat *systems.ChatSystem, t *tick.Tick) *server {
 	s := &server{
 		actionsQueue: actionsQueue,
 		registry:     registry,
@@ -51,6 +52,7 @@ func newServer(actionsQueue *actions.ActionsQueue, registry *components.Registry
 		chat:         chat,
 		tick:         t,
 		players:      map[string]*PlayerData{},
+		logger:       logger,
 	}
 	return s
 }
@@ -81,7 +83,7 @@ func (s *server) SetVelocity(ctx context.Context, v *esive_grpc.Velocity) (*esiv
 
 func (s *server) Build(ctx context.Context, _ *esive_grpc.BuildReq) (*esive_grpc.BuildRes, error) {
 	playerID := ctx.Value("playerID").(string)
-	fmt.Printf("Player %v build a dot\n", playerID)
+	s.logger.Debug("Player %v build a dot\n", zap.String("playerID", playerID))
 
 	playerData := s.playerData(ctx)
 	tick, err := getTickFromCtx(ctx)
@@ -114,7 +116,7 @@ func (s *server) Build(ctx context.Context, _ *esive_grpc.BuildReq) (*esive_grpc
 
 func (s *server) Inspect(ctx context.Context, _ *esive_grpc.InspectReq) (*esive_grpc.InspectRes, error) {
 	playerID := ctx.Value("playerID").(string)
-	fmt.Printf("Player %v inspected\n", playerID)
+	s.logger.Debug("Player inspected", zap.String("playerID", playerID))
 
 	playerData := s.playerData(ctx)
 	pos := &components.Position{}
@@ -143,7 +145,7 @@ func (s *server) Inspect(ctx context.Context, _ *esive_grpc.InspectReq) (*esive_
 
 func (s *server) Say(ctx context.Context, req *esive_grpc.SayReq) (*esive_grpc.SayRes, error) {
 	playerID := ctx.Value("playerID").(string)
-	fmt.Printf("Player %v say: %v\n", playerID, req.Text)
+	s.logger.Debug("Player say", zap.String("playerID", playerID), zap.String("text", req.Text))
 	tick, err := getTickFromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -159,7 +161,7 @@ func (s *server) Say(ctx context.Context, req *esive_grpc.SayReq) (*esive_grpc.S
 
 func (s *server) Join(ctx context.Context, req *esive_grpc.JoinReq) (*esive_grpc.JoinRes, error) {
 	playerID := ctx.Value("playerID").(string)
-	fmt.Printf("Player %v joined\n", playerID)
+	s.logger.Debug("Player joined", zap.String("playerID", playerID))
 
 	for _, d := range s.players {
 		if d.Name == req.Name {
@@ -203,7 +205,7 @@ func (s *server) Join(ctx context.Context, req *esive_grpc.JoinReq) (*esive_grpc
 func (s *server) ChatUpdates(req *esive_grpc.ChatUpdatesReq, stream esive_grpc.Esive_ChatUpdatesServer) error {
 	ctx := stream.Context()
 	playerID := ctx.Value("playerID").(string)
-	fmt.Printf("Player %v subscribed to chat updates\n", playerID)
+	s.logger.Debug("Player subscribed to chat updates", zap.String("playerID", playerID))
 	playerData := s.playerData(ctx)
 
 	for message := range playerData.Updater.Chats {
@@ -217,7 +219,7 @@ func (s *server) ChatUpdates(req *esive_grpc.ChatUpdatesReq, stream esive_grpc.E
 func (s *server) VisibilityUpdates(req *esive_grpc.VisibilityUpdatesReq, stream esive_grpc.Esive_VisibilityUpdatesServer) error {
 	ctx := stream.Context()
 	playerID := ctx.Value("playerID").(string)
-	fmt.Printf("Player %v subscribed to visibility updates\n", playerID)
+	s.logger.Debug("Player subscribed to visibility updates", zap.String("playerID", playerID))
 	playerData := s.playerData(ctx)
 
 	viewItems, err := s.vision.LookAll(ctx, playerData.Entity)
@@ -252,6 +254,7 @@ func (s *server) VisibilityUpdates(req *esive_grpc.VisibilityUpdatesReq, stream 
 
 type serverStats struct {
 	server *server
+	logger *zap.Logger
 }
 
 func (h *serverStats) TagRPC(ctx context.Context, info *stats.RPCTagInfo) context.Context {
@@ -262,15 +265,15 @@ func (h *serverStats) HandleRPC(ctx context.Context, s stats.RPCStats) {}
 
 func (h *serverStats) TagConn(ctx context.Context, info *stats.ConnTagInfo) context.Context {
 	playerID := uuid.New().String()
-	fmt.Printf("Player %v connected\n", playerID)
-	return context.WithValue(ctx, "playerID", playerID)
+	h.logger.Debug("Player connected", zap.String("playerID", playerID))
+	return context.WithValue(ctx, "playerID", "playerID")
 }
 
 func (h *serverStats) HandleConn(ctx context.Context, s stats.ConnStats) {
 	switch s.(type) {
 	case *stats.ConnEnd:
 		playerID := ctx.Value("playerID").(string)
-		fmt.Printf("client %v disconnected\n", playerID)
+		h.logger.Debug("Player disconnected", zap.String("playerID", playerID))
 		playerData, ok := h.server.players[playerID]
 		if ok {
 			err := h.server.registry.DeleteEntity(ctx, playerData.Entity)
@@ -296,10 +299,10 @@ func (s *server) playerData(ctx context.Context) *PlayerData {
 func (s *server) Serve() {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 9000))
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		s.logger.Fatal("failed to listen", zap.Error(err))
 	}
 	grpcServer := grpc.NewServer(
-		grpc.StatsHandler(&serverStats{s}),
+		grpc.StatsHandler(&serverStats{s, s.logger}),
 		grpc.ChainUnaryInterceptor(
 			otelgrpc.UnaryServerInterceptor(),
 			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
@@ -315,6 +318,6 @@ func (s *server) Serve() {
 		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
 	)
 	esive_grpc.RegisterEsiveServer(grpcServer, s)
-	log.Println("Running...")
+	s.logger.Info("Running...")
 	grpcServer.Serve(lis)
 }
