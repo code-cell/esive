@@ -72,8 +72,8 @@ func (s *MovementSystem) Teleport(parentContext context.Context, tick int64, ent
 		Y: pos.Y,
 	}
 
-	pos.X += newX
-	pos.Y += newY
+	pos.X = newX
+	pos.Y = newY
 
 	registry.UpdateComponents(ctx, entity, pos)
 	// TODO: Do something better with the moveable.
