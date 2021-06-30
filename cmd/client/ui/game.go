@@ -59,6 +59,7 @@ func NewGame(c *client.Client) *Game {
 	})
 
 	menu := NewMenu(ff)
+	c.AddChatHandler(menu.HandleChatMessage)
 	prediction := NewPrediction()
 
 	menu.textInput.SendEvent.AddHandler(func(args interface{}) {

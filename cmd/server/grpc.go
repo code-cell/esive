@@ -81,42 +81,9 @@ func (s *server) SetVelocity(ctx context.Context, v *esive_grpc.Velocity) (*esiv
 	return &esive_grpc.MoveRes{}, nil
 }
 
-func (s *server) Build(ctx context.Context, _ *esive_grpc.BuildReq) (*esive_grpc.BuildRes, error) {
+func (s *server) Read(ctx context.Context, req *esive_grpc.ReadReq) (*esive_grpc.ReadRes, error) {
 	playerID := ctx.Value("playerID").(string)
-	s.logger.Debug("Player %v build a dot\n", zap.String("playerID", playerID))
-
-	playerData := s.playerData(ctx)
-	tick, err := getTickFromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	s.actionsQueue.QueueAction(ctx, tick, func(ctx context.Context) {
-		pos := &components.Position{}
-		err := s.registry.LoadComponents(ctx, playerData.Entity, pos)
-		if err != nil {
-			panic(err)
-		}
-
-		entity, err := s.registry.NewEntity(ctx)
-		if err != nil {
-			panic(err)
-		}
-		err = s.registry.CreateComponents(ctx, entity,
-			&components.Render{Char: ".", Color: 0xdbec76ff},
-			pos,
-		)
-		if err != nil {
-			panic(err)
-		}
-	})
-
-	return &esive_grpc.BuildRes{}, nil
-}
-
-func (s *server) Inspect(ctx context.Context, _ *esive_grpc.InspectReq) (*esive_grpc.InspectRes, error) {
-	playerID := ctx.Value("playerID").(string)
-	s.logger.Debug("Player inspected", zap.String("playerID", playerID))
+	s.logger.Debug("Player read", zap.String("playerID", playerID))
 
 	playerData := s.playerData(ctx)
 	pos := &components.Position{}
@@ -125,7 +92,15 @@ func (s *server) Inspect(ctx context.Context, _ *esive_grpc.InspectReq) (*esive_
 		panic(err)
 	}
 
-	_, _, extras, err := s.geo.FindInRange(ctx, pos.X, pos.Y, 0, &components.Readable{})
+	if components.Distance(req.Position.X, req.Position.Y, pos.X, pos.Y) > 5 {
+		playerData.Updater.Chats <- &esive_grpc.ChatMessage{
+			From: "<SYSTEM>",
+			Text: "You can read only up to 5 tiles from you. Get closer and try again.",
+		}
+		return &esive_grpc.ReadRes{}, nil
+	}
+
+	_, _, extras, err := s.geo.FindInRange(ctx, req.Position.X, req.Position.Y, 0, &components.Readable{})
 	if err != nil {
 		panic(err)
 	}
@@ -140,7 +115,7 @@ func (s *server) Inspect(ctx context.Context, _ *esive_grpc.InspectReq) (*esive_
 		}
 	}
 
-	return &esive_grpc.InspectRes{}, nil
+	return &esive_grpc.ReadRes{}, nil
 }
 
 func (s *server) Say(ctx context.Context, req *esive_grpc.SayReq) (*esive_grpc.SayRes, error) {

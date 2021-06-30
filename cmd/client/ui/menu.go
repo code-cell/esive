@@ -75,6 +75,7 @@ func NewMenu(ff font.Face) *Menu {
 	menu.chatText.Label += "Type '/help' in the chat to see the list of commands.\n"
 	menu.chatText.Label += "Press 'esc' to close the game.\n"
 	menu.chatText.Label += "\n"
+
 	return menu
 }
 

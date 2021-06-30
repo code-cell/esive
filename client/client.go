@@ -251,3 +251,7 @@ func (c *Client) SendChatMessage(message string) {
 		Text: message,
 	})
 }
+
+func (c *Client) Read(x, y int64) {
+	c.esiveClient.Read(context.Background(), &esive_grpc.ReadReq{Position: &esive_grpc.Position{X: x, Y: y}})
+}

@@ -7,8 +7,7 @@ package grpc;
 service Esive {
   rpc SetVelocity(Velocity) returns (MoveRes) {}
 
-  rpc Build(BuildReq) returns (BuildRes) {}
-  rpc Inspect(InspectReq) returns (InspectRes) {}
+  rpc Read(ReadReq) returns (ReadRes) {}
   rpc VisibilityUpdates(VisibilityUpdatesReq) returns (stream VisibilityUpdatesRes) {}
   rpc ChatUpdates(ChatUpdatesReq) returns (stream ChatUpdatesRes) {}
   rpc Say(SayReq) returns (SayRes) {}
@@ -35,13 +34,11 @@ message ChatUpdatesRes {
 message MoveReq {}
 message MoveRes {}
 
-message BuildReq {}
-message BuildRes {
+message ReadReq {
   Position position = 1;
 }
 
-message InspectReq {}
-message InspectRes {}
+message ReadRes {}
 
 message JoinReq {
   string name = 1;

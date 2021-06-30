@@ -132,7 +132,7 @@ func (cm *ChatCommands) noteCommand(ctx context.Context, _ int64, entity compone
 
 	err = cm.registry.CreateComponents(ctx, noteEntity,
 		&components.Position{X: pos.X, Y: pos.Y},
-		&components.Render{Char: "n", Color: 0x649ce4ff},
+		&components.Render{Char: "N", Color: 0x649ce4ff},
 		&components.Readable{Text: fmt.Sprintf("Message from %v: %v", name.Name, text)},
 	)
 	if err != nil {
