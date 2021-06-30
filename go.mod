@@ -10,7 +10,7 @@ require (
 	github.com/hajimehoshi/ebiten/v2 v2.1.0
 	github.com/nats-io/jsm.go v0.0.22
 	github.com/nats-io/nats.go v1.10.1-0.20210228004050-ed743748acac
-	github.com/peterh/liner v1.2.1 // indirect
+	github.com/peterh/liner v1.2.1
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.19.0
