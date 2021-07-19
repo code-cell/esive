@@ -5,17 +5,20 @@ option go_package = "github.com/code-cell/esive/grpc";
 package grpc;
 
 service Esive {
-  rpc SetVelocity(Velocity) returns (MoveRes) {}
-
-  rpc Read(ReadReq) returns (ReadRes) {}
-  rpc VisibilityUpdates(VisibilityUpdatesReq) returns (stream VisibilityUpdatesRes) {}
+  rpc TickUpdates(TickUpdatesReq) returns (stream TickUpdatesRes) {}
   rpc ChatUpdates(ChatUpdatesReq) returns (stream ChatUpdatesRes) {}
+
+  rpc SetVelocity(Velocity) returns (MoveRes) {}
+  rpc Read(ReadReq) returns (ReadRes) {}
   rpc Say(SayReq) returns (SayRes) {}
   rpc Join(JoinReq) returns (JoinRes) {}
 }
 
-message VisibilityUpdatesReq {}
-message VisibilityUpdatesRes {
+message TickUpdatesReq {}
+message TickUpdatesRes {
+  repeated VisibilityUpdate visibilityUpdates = 1;
+}
+message VisibilityUpdate{
   enum Action {
     ADD = 0;
     REMOVE = 1;

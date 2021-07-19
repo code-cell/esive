@@ -24,7 +24,7 @@ type VisionSystemLookItem struct {
 
 type VisionSystemUpdater interface {
 	HandleVisibilityLostSight(components.Entity, int64)
-	HandleVisibilityUpdate(*VisionSystemLookItem, int64)
+	HandleTickUpdate(*VisionSystemLookItem, int64)
 }
 
 type VisionSystem struct {
@@ -124,7 +124,7 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, tick int64,
 			if oldDist <= looker.Range && newDist > looker.Range {
 				updater.HandleVisibilityLostSight(entity, tick)
 			} else if newDist <= looker.Range {
-				updater.HandleVisibilityUpdate(&VisionSystemLookItem{
+				updater.HandleTickUpdate(&VisionSystemLookItem{
 					ID:    int64(entity),
 					X:     newPos.X,
 					Y:     newPos.Y,
@@ -136,7 +136,7 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, tick int64,
 			}
 		} else {
 			// Send its own update in case it went offsync.
-			updater.HandleVisibilityUpdate(&VisionSystemLookItem{
+			updater.HandleTickUpdate(&VisionSystemLookItem{
 				ID:    int64(entity),
 				X:     lookerPos.X,
 				Y:     lookerPos.Y,
@@ -171,7 +171,7 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, tick int64,
 				if _, foundInOld := oldIdx[newEntity]; !foundInOld {
 					render := extras[i][0].(*components.Render)
 					mov := extras[i][1].(*components.Moveable)
-					updater.HandleVisibilityUpdate(&VisionSystemLookItem{
+					updater.HandleTickUpdate(&VisionSystemLookItem{
 						ID:    int64(newEntity),
 						X:     newPositions[i].X,
 						Y:     newPositions[i].Y,
@@ -227,7 +227,7 @@ func (s *VisionSystem) HandleNewComponent(ctx context.Context, tick int64, t str
 		}
 
 		if dist <= looker.Range {
-			updater.HandleVisibilityUpdate(&VisionSystemLookItem{
+			updater.HandleTickUpdate(&VisionSystemLookItem{
 				ID:    int64(entity),
 				X:     pos.X,
 				Y:     pos.Y,

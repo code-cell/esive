@@ -65,7 +65,7 @@ func runBot(n int) {
 	t = tick.NewTick(serverTick+3, time.Duration(joinRes.TickMilliseconds)*time.Millisecond)
 	go t.Start()
 
-	visRes, err := client.VisibilityUpdates(context.Background(), &esive_grpc.VisibilityUpdatesReq{})
+	visRes, err := client.TickUpdates(context.Background(), &esive_grpc.TickUpdatesReq{})
 	if err != nil {
 		panic(err)
 	}
@@ -76,7 +76,7 @@ func runBot(n int) {
 	go handleBot(client, name, visRes, chatRes)
 }
 
-func handleBot(client esive_grpc.EsiveClient, name string, visRes esive_grpc.Esive_VisibilityUpdatesClient, chatRes esive_grpc.Esive_ChatUpdatesClient) {
+func handleBot(client esive_grpc.EsiveClient, name string, visRes esive_grpc.Esive_TickUpdatesClient, chatRes esive_grpc.Esive_ChatUpdatesClient) {
 	go func() {
 		for {
 			_, err := visRes.Recv()

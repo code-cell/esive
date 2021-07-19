@@ -127,7 +127,7 @@ func (c *Client) Connect() error {
 	c.PlayerID = res.PlayerId
 	c.initTickFromMD(md, res.TickMilliseconds)
 
-	visStream, err := c.esiveClient.VisibilityUpdates(context.Background(), &esive_grpc.VisibilityUpdatesReq{})
+	visStream, err := c.esiveClient.TickUpdates(context.Background(), &esive_grpc.TickUpdatesReq{})
 	if err != nil {
 		panic(err)
 	}
@@ -139,11 +139,13 @@ func (c *Client) Connect() error {
 				fmt.Println(err.Error())
 				return
 			}
-			switch e.Action {
-			case esive_grpc.VisibilityUpdatesRes_ADD:
-				c.updateRenderable(e.Tick, e.Renderable)
-			case esive_grpc.VisibilityUpdatesRes_REMOVE:
-				c.deleteRenderable(e.Tick, e.Renderable.Id)
+			for _, visibilityUpdate := range e.VisibilityUpdates {
+				switch visibilityUpdate.Action {
+				case esive_grpc.VisibilityUpdate_ADD:
+					c.updateRenderable(visibilityUpdate.Tick, visibilityUpdate.Renderable)
+				case esive_grpc.VisibilityUpdate_REMOVE:
+					c.deleteRenderable(visibilityUpdate.Tick, visibilityUpdate.Renderable.Id)
+				}
 			}
 		}
 	}()

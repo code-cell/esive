@@ -191,7 +191,7 @@ func (s *server) ChatUpdates(req *esive_grpc.ChatUpdatesReq, stream esive_grpc.E
 	return nil
 }
 
-func (s *server) VisibilityUpdates(req *esive_grpc.VisibilityUpdatesReq, stream esive_grpc.Esive_VisibilityUpdatesServer) error {
+func (s *server) TickUpdates(req *esive_grpc.TickUpdatesReq, stream esive_grpc.Esive_TickUpdatesServer) error {
 	ctx := stream.Context()
 	playerID := ctx.Value("playerID").(string)
 	s.logger.Debug("Player subscribed to visibility updates", zap.String("playerID", playerID))
@@ -202,9 +202,10 @@ func (s *server) VisibilityUpdates(req *esive_grpc.VisibilityUpdatesReq, stream 
 		panic(err)
 	}
 
+	res := &esive_grpc.TickUpdatesRes{VisibilityUpdates: make([]*esive_grpc.VisibilityUpdate, 0)}
 	for _, viewItem := range viewItems {
-		stream.Send(&esive_grpc.VisibilityUpdatesRes{
-			Action: esive_grpc.VisibilityUpdatesRes_ADD,
+		res.VisibilityUpdates = append(res.VisibilityUpdates, &esive_grpc.VisibilityUpdate{
+			Action: esive_grpc.VisibilityUpdate_ADD,
 			Renderable: &esive_grpc.Renderable{
 				Char:  viewItem.Char,
 				Color: viewItem.Color,
@@ -220,9 +221,14 @@ func (s *server) VisibilityUpdates(req *esive_grpc.VisibilityUpdatesReq, stream 
 			},
 		})
 	}
+	stream.Send(res)
 
 	for update := range playerData.Updater.Updates {
-		stream.Send(update)
+		stream.Send(&esive_grpc.TickUpdatesRes{
+			VisibilityUpdates: []*esive_grpc.VisibilityUpdate{
+				update,
+			},
+		})
 	}
 	return nil
 }
