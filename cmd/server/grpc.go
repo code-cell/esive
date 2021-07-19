@@ -222,15 +222,29 @@ func (s *server) TickUpdates(req *esive_grpc.TickUpdatesReq, stream esive_grpc.E
 		})
 	}
 	stream.Send(res)
+	res.VisibilityUpdates = make([]*esive_grpc.VisibilityUpdate, 0)
 
-	for update := range playerData.Updater.Updates {
-		stream.Send(&esive_grpc.TickUpdatesRes{
-			VisibilityUpdates: []*esive_grpc.VisibilityUpdate{
-				update,
-			},
-		})
+	// TODO: This will aggregate tick updates and send them at the begining of the next tick. This is
+	// not great, as adds one extra to send data to the players. It'd be better to sync up with the
+	// corresponding systems and trigger the push once the systems have finished processing the
+	// current tick.
+	tickCh := make(chan int64)
+	s.tick.AddSubscriber(func(_ context.Context, tick int64) {
+		tickCh <- tick
+	})
+
+	for {
+		select {
+		case <-tickCh:
+			if len(res.VisibilityUpdates) > 0 {
+				stream.Send(res)
+				res.VisibilityUpdates = make([]*esive_grpc.VisibilityUpdate, 0)
+			}
+		case update := <-playerData.Updater.Updates:
+			res.VisibilityUpdates = append(res.VisibilityUpdates, update)
+		}
 	}
-	return nil
+	// return nil
 }
 
 type serverStats struct {
