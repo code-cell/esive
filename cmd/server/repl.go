@@ -66,18 +66,6 @@ func NewRepl(grpcServer *server, tick *tick.Tick, movement *systems.MovementSyst
 		action: func(_ []string) {
 			players := []string{}
 			for _, player := range r.grpcServer.players {
-				players = append(players, fmt.Sprintf("%d `%s`", player.Entity, player.Name))
-			}
-			fmt.Printf("Players:\n\t%v\n", strings.Join(players, "\n\t"))
-		},
-	})
-
-	r.commands = append(r.commands, replCommand{
-		keyword: "info",
-		help:    "Displays server information",
-		action: func(_ []string) {
-			players := []string{}
-			for _, player := range r.grpcServer.players {
 				players = append(players, fmt.Sprintf("%v", player.Entity))
 			}
 			fmt.Printf("Players:\n\t%v\n", strings.Join(players, "\n\t"))
