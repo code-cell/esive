@@ -6,3 +6,7 @@ option go_package = "github.com/code-cell/esive/queue";
 message Tick {
   int64 tick = 1;
 }
+
+message TickServicesFinished {
+  int64 tick = 1;
+}

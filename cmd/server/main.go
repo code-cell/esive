@@ -84,14 +84,6 @@ func main() {
 
 	t.AddSubscriber(q.HandleTick)
 
-	go q.Consume("tick", "actions", &queue.Tick{}, func(m proto.Message) {
-		tickMessage := m.(*queue.Tick)
-		actionsQueue.CallActions(tickMessage.Tick, context.Background())
-		movement.MoveAllMoveables(context.Background(), tickMessage.Tick)
-	})
-	// go q.Consume("tick", "systems", &queue.Tick{}, movement.OnTick)
-	go t.Start()
-
 	registry.OnCreateComponent(func(ctx context.Context, entity components.Entity, component proto.Message) {
 		componentType := component.ProtoReflect().Descriptor().FullName().Name()
 		vision.HandleNewComponent(ctx, t.Current(), string(componentType), entity)
@@ -125,6 +117,18 @@ func main() {
 	}
 
 	s := newServer(logger, actionsQueue, registry, geo, vision, movement, chat, t)
+
+	go q.Consume("tick", "actions", &queue.Tick{}, func(m proto.Message) {
+		tickMessage := m.(*queue.Tick)
+		actionsQueue.CallActions(tickMessage.Tick, context.Background())
+		movement.MoveAllMoveables(context.Background(), tickMessage.Tick)
+		q.HandleTickServicesDone(context.Background(), tickMessage.Tick)
+	})
+	go q.Consume("tick-services-finished", "grpc-flush", &queue.TickServicesFinished{}, func(m proto.Message) {
+		s.flushVisibilityUpdates()
+	})
+
+	go t.Start()
 	go s.Serve()
 
 	repl := NewRepl(s, t, movement)

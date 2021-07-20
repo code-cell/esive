@@ -48,6 +48,24 @@ func (q *Queue) HandleTick(ctx context.Context, tick int64) {
 	}
 }
 
+func (q *Queue) HandleTickServicesDone(ctx context.Context, tick int64) {
+	t := &TickServicesFinished{
+		Tick: tick,
+	}
+
+	payload, err := proto.Marshal(t)
+	if err != nil {
+		// TODO: Handle this
+		panic(err)
+	}
+
+	err = q.nc.Publish("tick-services-finished", payload)
+	if err != nil {
+		// TODO: Handle this
+		panic(err)
+	}
+}
+
 func (q *Queue) Consume(subject, consumer string, message proto.Message, cb func(proto.Message)) {
 	sub, err := q.nc.QueueSubscribeSync(subject, consumer)
 	if err != nil {

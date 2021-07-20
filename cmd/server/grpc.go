@@ -40,19 +40,23 @@ type server struct {
 
 	playersMtx sync.Mutex
 	players    map[string]*PlayerData
+
+	visibilityFlushCh  []chan struct{}
+	visibilityFlushMtx sync.Mutex
 }
 
 func newServer(logger *zap.Logger, actionsQueue *actions.ActionsQueue, registry *components.Registry, geo *components.Geo, vision *systems.VisionSystem, movement *systems.MovementSystem, chat *systems.ChatSystem, t *tick.Tick) *server {
 	s := &server{
-		actionsQueue: actionsQueue,
-		registry:     registry,
-		geo:          geo,
-		vision:       vision,
-		movement:     movement,
-		chat:         chat,
-		tick:         t,
-		players:      map[string]*PlayerData{},
-		logger:       logger,
+		actionsQueue:      actionsQueue,
+		registry:          registry,
+		geo:               geo,
+		vision:            vision,
+		movement:          movement,
+		chat:              chat,
+		tick:              t,
+		players:           map[string]*PlayerData{},
+		logger:            logger,
+		visibilityFlushCh: make([]chan struct{}, 0),
 	}
 	return s
 }
@@ -67,6 +71,15 @@ func getTickFromCtx(ctx context.Context) (int64, error) {
 		return 0, errors.New("No tick found in the context")
 	}
 	return strconv.ParseInt(tick[0], 10, 64)
+}
+
+func (s *server) flushVisibilityUpdates() error {
+	s.visibilityFlushMtx.Lock()
+	defer s.visibilityFlushMtx.Unlock()
+	for _, ch := range s.visibilityFlushCh {
+		ch <- struct{}{}
+	}
+	return nil
 }
 
 func (s *server) SetVelocity(ctx context.Context, v *esive_grpc.Velocity) (*esive_grpc.MoveRes, error) {
@@ -224,18 +237,17 @@ func (s *server) TickUpdates(req *esive_grpc.TickUpdatesReq, stream esive_grpc.E
 	stream.Send(res)
 	res.VisibilityUpdates = make([]*esive_grpc.VisibilityUpdate, 0)
 
-	// TODO: This will aggregate tick updates and send them at the begining of the next tick. This is
-	// not great, as adds one extra to send data to the players. It'd be better to sync up with the
-	// corresponding systems and trigger the push once the systems have finished processing the
-	// current tick.
-	tickCh := make(chan int64)
-	s.tick.AddSubscriber(func(_ context.Context, tick int64) {
-		tickCh <- tick
-	})
+	flushCh := make(chan struct{})
+	s.visibilityFlushMtx.Lock()
+	s.visibilityFlushCh = append(s.visibilityFlushCh, flushCh)
+	s.visibilityFlushMtx.Unlock()
 
-	for {
+	exit := false
+	for !exit {
 		select {
-		case <-tickCh:
+		case <-stream.Context().Done():
+			exit = true
+		case <-flushCh:
 			if len(res.VisibilityUpdates) > 0 {
 				stream.Send(res)
 				res.VisibilityUpdates = make([]*esive_grpc.VisibilityUpdate, 0)
@@ -244,7 +256,17 @@ func (s *server) TickUpdates(req *esive_grpc.TickUpdatesReq, stream esive_grpc.E
 			res.VisibilityUpdates = append(res.VisibilityUpdates, update)
 		}
 	}
-	// return nil
+
+	s.visibilityFlushMtx.Lock()
+	for i := 0; i < len(s.visibilityFlushCh); i++ {
+		if s.visibilityFlushCh[i] == flushCh {
+			s.visibilityFlushCh[i] = s.visibilityFlushCh[len(s.visibilityFlushCh)-1]
+			s.visibilityFlushCh = s.visibilityFlushCh[:len(s.visibilityFlushCh)-1]
+			break
+		}
+	}
+	s.visibilityFlushMtx.Unlock()
+	return nil
 }
 
 type serverStats struct {
