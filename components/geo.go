@@ -48,7 +48,7 @@ func (g *Geo) OnCreateComponent(parentCtx context.Context, entity Entity, compon
 
 	if componentType == "Position" {
 		pos := component.(*Position)
-		chunkX, chunkY := g.chunk(pos.X, pos.Y)
+		chunkX, chunkY := g.Chunk(pos.X, pos.Y)
 		idStr := strconv.FormatInt(int64(entity), 10)
 		_, err := g.registry.redisStore.SAdd(ctx, g.key(chunkX, chunkY), idStr)
 		if err != nil {
@@ -72,7 +72,7 @@ func (g *Geo) OnDeleteComponent(parentCtx context.Context, entity Entity, compon
 
 	if componentType == "Position" {
 		pos := component.(*Position)
-		chunkX, chunkY := g.chunk(pos.X, pos.Y)
+		chunkX, chunkY := g.Chunk(pos.X, pos.Y)
 		idStr := strconv.FormatInt(int64(entity), 10)
 		err := g.store.SRem(ctx, g.key(chunkX, chunkY), idStr)
 		if err != nil {
@@ -92,8 +92,8 @@ func (g *Geo) OnMovePosition(parentCtx context.Context, entity Entity, old, new 
 	)
 	defer span.End()
 
-	oldChunkX, oldChunkY := g.chunk(old.X, old.Y)
-	newChunkX, newChunkY := g.chunk(new.X, new.Y)
+	oldChunkX, oldChunkY := g.Chunk(old.X, old.Y)
+	newChunkX, newChunkY := g.Chunk(new.X, new.Y)
 	if oldChunkX != newChunkX || oldChunkY != newChunkY {
 		logger.Debug("moving component to new chunk")
 		idStr := strconv.FormatInt(int64(entity), 10)
@@ -111,6 +111,37 @@ func (g *Geo) OnMovePosition(parentCtx context.Context, entity Entity, old, new 
 	}
 }
 
+func (g *Geo) FindInChunk(parentCtx context.Context, chunkX, chunkY int64, extraComponents ...proto.Message) ([]Entity, []*Position, [][]proto.Message, error) {
+	logger := g.logger.With(zap.Int64("chunkX", chunkX), zap.Int64("chunkY", chunkY))
+	ctx, span := geoTracer.Start(parentCtx, "FindInChunk")
+	span.SetAttributes(
+		attribute.Int64("chunkX", chunkX),
+		attribute.Int64("chunkY", chunkY),
+	)
+	defer span.End()
+
+	logger.Debug("finding entities in chunk")
+
+	entities := []Entity{}
+	positions := []*Position{}
+	extras := [][]proto.Message{}
+
+	queryComponents := append([]proto.Message{&Position{}}, extraComponents...)
+
+	e, c, err := g.registry.LoadComponentsFromIndex(ctx, g.key(chunkX, chunkY), queryComponents...)
+	if err != nil {
+		logger.Error("error finding chunk members", zap.Error(err))
+		return nil, nil, nil, err
+	}
+	for i, entity := range e {
+		pos := c[i][0].(*Position)
+		entities = append(entities, entity)
+		positions = append(positions, pos)
+		extras = append(extras, c[i][1:])
+	}
+	return entities, positions, extras, nil
+}
+
 func (g *Geo) FindInRange(parentCtx context.Context, x, y int64, rng float32, extraComponents ...proto.Message) ([]Entity, []*Position, [][]proto.Message, error) {
 	logger := g.logger.With(zap.Int64("x", x), zap.Int64("y", y), zap.Float32("range", rng))
 
@@ -124,7 +155,7 @@ func (g *Geo) FindInRange(parentCtx context.Context, x, y int64, rng float32, ex
 
 	logger.Debug("finding entities in range")
 	chunksInRange := int64(math.Ceil(float64(rng) / float64(g.chunkSize)))
-	originChunkX, originChunkY := g.chunk(x, y)
+	originChunkX, originChunkY := g.Chunk(x, y)
 
 	entities := []Entity{}
 	positions := []*Position{}
@@ -154,7 +185,7 @@ func (g *Geo) FindInRange(parentCtx context.Context, x, y int64, rng float32, ex
 	return entities, positions, extras, nil
 }
 
-func (g *Geo) chunk(x, y int64) (int64, int64) {
+func (g *Geo) Chunk(x, y int64) (int64, int64) {
 	return x / int64(g.chunkSize), y / int64(g.chunkSize)
 }
 

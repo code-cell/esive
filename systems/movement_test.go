@@ -53,7 +53,7 @@ func TestSimpleMovement(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = env.movement.MoveAllMoveables(context.Background(), 0)
+	move(t, env.movement)
 	require.NoError(t, err)
 
 	pos := &components.Position{}
@@ -81,7 +81,7 @@ func TestCollision_WithAStaticEntity(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = env.movement.MoveAllMoveables(context.Background(), 0)
+	move(t, env.movement)
 	require.NoError(t, err)
 
 	pos := &components.Position{}
@@ -110,7 +110,7 @@ func TestCollision_TwoEntitiesMoveToTheSamePlace(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = env.movement.MoveAllMoveables(context.Background(), 0)
+	move(t, env.movement)
 	require.NoError(t, err)
 
 	pos := &components.Position{}
@@ -144,7 +144,7 @@ func TestCollision_TakingPlaceOfMovingEntity(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = env.movement.MoveAllMoveables(context.Background(), 0)
+	move(t, env.movement)
 	require.NoError(t, err)
 
 	pos := &components.Position{}
@@ -157,4 +157,19 @@ func TestCollision_TakingPlaceOfMovingEntity(t *testing.T) {
 	require.NoError(t, env.registry.LoadComponents(context.Background(), entity2, pos))
 	require.Equal(t, int64(12), pos.X)
 	require.Equal(t, int64(20), pos.Y)
+}
+
+func move(t *testing.T, m *MovementSystem) {
+	chunks, err := m.ChunksWithMovingEntities(context.Background())
+	require.NoError(t, err)
+
+	across := []components.Entity{}
+	for x, c := range chunks {
+		for y := range c {
+			entities, err := m.MoveAllEntitiesInChunk(context.Background(), x, y, 0)
+			require.NoError(t, err)
+			across = append(across, entities...)
+		}
+	}
+	m.MoveEntitiesAcrossChunks(context.Background(), across, 0)
 }

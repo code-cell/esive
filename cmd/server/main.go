@@ -80,8 +80,10 @@ func main() {
 		panic(err)
 	}
 
-	t := tick.NewTick(0, *tickDuration)
+	tp := NewTickProcessor(logger, q, actionsQueue, movement, vision)
+	tp.Init()
 
+	t := tick.NewTick(0, *tickDuration)
 	t.AddSubscriber(q.HandleTick)
 
 	registry.OnCreateComponent(func(ctx context.Context, entity components.Entity, component proto.Message) {
@@ -118,12 +120,6 @@ func main() {
 
 	s := newServer(logger, actionsQueue, registry, geo, vision, movement, chat, t)
 
-	go q.Consume("tick", "actions", &queue.Tick{}, func(m proto.Message) {
-		tickMessage := m.(*queue.Tick)
-		actionsQueue.CallActions(tickMessage.Tick, context.Background())
-		movement.MoveAllMoveables(context.Background(), tickMessage.Tick)
-		q.HandleTickServicesDone(context.Background(), tickMessage.Tick)
-	})
 	go q.Consume("tick-services-finished", "grpc-flush", &queue.TickServicesFinished{}, func(m proto.Message) {
 		s.flushVisibilityUpdates()
 	})

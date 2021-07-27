@@ -10,6 +10,15 @@ import (
 
 var movementTracer = otel.Tracer("systems/movement")
 
+// Movement steps:
+// 1. Figure out which chunks need processing, send a queue message for each
+// 2. For each chunk:
+// 2.1. Find all entities moving
+// 2.2. Plan movements (if it moves to another chunk, save this entity somewhere for inter-chunk collisions check)
+// 2.3. Handle collisions in-chunk
+// 2.4. Save new positions (in-chunk only)
+// 3. Handle inter-chunk collisions. If an entity lands on another chunk, it will only work if the end position is empty after handling in-chunk movement. So in-chunk has preference over inter-chunk.
+
 type MovementSystem struct {
 	visionSystem *VisionSystem
 }
@@ -86,23 +95,65 @@ func (s *MovementSystem) Teleport(parentContext context.Context, tick int64, ent
 	return err
 }
 
-func (s *MovementSystem) MoveAllMoveables(parentContext context.Context, tick int64) error {
-	// TODO: The core logic of this is duplicated
-	ctx, span := movementTracer.Start(parentContext, "movement.MoveAllMoveables")
+func (m *MovementSystem) ChunksWithMovingEntities(parentContext context.Context) (map[int64]map[int64]struct{}, error) {
+	ctx, span := movementTracer.Start(parentContext, "movement.ChunksWithMovingEntities")
 	defer span.End()
 
-	// Phase 1: Plan movements
+	res := map[int64]map[int64]struct{}{}
+
 	movingEntities, movingEntitiesExtras, err := registry.EntitiesWithComponentType(ctx, &components.Moveable{}, &components.Moveable{}, &components.Position{})
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+
+	for i, _ := range movingEntities {
+		mov := movingEntitiesExtras[i][0].(*components.Moveable)
+		pos := movingEntitiesExtras[i][1].(*components.Position)
+		if mov.VelX == 0 && mov.VelY == 0 {
+			continue
+		}
+		cx, cy := geo.Chunk(pos.X, pos.Y)
+		ymap, found := res[cx]
+		if !found {
+			ymap = map[int64]struct{}{}
+			res[cx] = ymap
+		}
+		ymap[cy] = struct{}{}
+	}
+
+	return res, nil
+}
+
+// MoveAllEntitiesInChunk performs all movements within a chunk, and returns the entities that move across chunks for further processing.
+func (m *MovementSystem) MoveAllEntitiesInChunk(parentContext context.Context, chunkX, chunkY int64, tick int64) ([]components.Entity, error) {
+	ctx, span := movementTracer.Start(parentContext, "movement.ChunksWithMovingEntities")
+	defer span.End()
+
+	res := []components.Entity{}
+
+	entities, positions, extras, err := geo.FindInChunk(ctx, chunkX, chunkY, &components.Moveable{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Phase 1: Plan movements
 
 	plannedMovements := map[int64]map[int64]components.Entity{}
 	plannedMovingEntities := map[components.Entity]int{}
 
-	for i, entity := range movingEntities {
-		mov := movingEntitiesExtras[i][0].(*components.Moveable)
-		pos := movingEntitiesExtras[i][1].(*components.Position)
+	for i, entity := range entities {
+		pos := positions[i]
+		mov := extras[i][0].(*components.Moveable)
+
+		newChunkX, newChunkY := geo.Chunk(pos.X+mov.VelX, pos.Y+mov.VelY)
+		if newChunkX != chunkX || newChunkY != chunkY {
+			// The entity is moving to a different chunk, we handle this later.
+			// TODO: Other entities collide with this entity even though it might move out.
+			//   This is currently a tradeoff introduced to favor concurrency without adding a lot of complexity to the system
+			res = append(res, entity)
+			continue
+		}
+
 		if mov.VelX == 0 && mov.VelY == 0 {
 			continue
 		}
@@ -123,16 +174,13 @@ func (s *MovementSystem) MoveAllMoveables(parentContext context.Context, tick in
 		plannedMovingEntities[entity] = i
 	}
 
-	// Phase 2: Check collisions
-	allEntities, allExtras, err := registry.EntitiesWithComponentType(ctx, &components.Position{}, &components.Position{})
-	if err != nil {
-		panic(err)
-	}
+	// Phase 2: Check collisions in chunk against non-moving entities.
+	// At this point we've planned movements making sure only one entity moves to a given position.
 
-	for i, entity := range allEntities {
-		pos := allExtras[i][0].(*components.Position)
+	for i, entity := range entities {
+		pos := positions[i]
 		if _, found := plannedMovingEntities[entity]; found {
-			// The entity is moving somewhere else so we don't need to check anyting at this iteration.
+			// The target entity is moving too so we don't need to check anyting at this iteration.
 			// We'll check the collision when we process the other entity
 			continue
 		}
@@ -147,8 +195,9 @@ func (s *MovementSystem) MoveAllMoveables(parentContext context.Context, tick in
 			// No entities are moving here
 			continue
 		}
+		// There's an entity planning to move here. We make it stop and remove it from the plan
 		registry.UpdateComponents(ctx, movingEntity, &components.Moveable{})
-		err = s.visionSystem.HandleMovement(ctx, tick, movingEntity, &components.Moveable{}, movingEntitiesExtras[plannedMovingEntities[movingEntity]][1].(*components.Position), movingEntitiesExtras[plannedMovingEntities[movingEntity]][1].(*components.Position))
+		err = m.visionSystem.HandleMovement(ctx, tick, movingEntity, &components.Moveable{}, pos, pos)
 		if err != nil {
 			panic(err)
 		}
@@ -159,12 +208,12 @@ func (s *MovementSystem) MoveAllMoveables(parentContext context.Context, tick in
 	// Phase 3: Apply movements
 	for x, row := range plannedMovements {
 		for y, entity := range row {
-			mov := movingEntitiesExtras[plannedMovingEntities[entity]][0].(*components.Moveable)
-			oldPos := movingEntitiesExtras[plannedMovingEntities[entity]][1].(*components.Position)
+			oldPos := positions[plannedMovingEntities[entity]]
+			mov := extras[plannedMovingEntities[entity]][0].(*components.Moveable)
 			newPos := &components.Position{X: x, Y: y}
 
 			registry.UpdateComponents(ctx, entity, newPos)
-			err = s.visionSystem.HandleMovement(ctx, tick, entity, mov, oldPos, newPos)
+			err = m.visionSystem.HandleMovement(ctx, tick, entity, mov, oldPos, newPos)
 			if err != nil {
 				panic(err)
 			}
@@ -172,5 +221,42 @@ func (s *MovementSystem) MoveAllMoveables(parentContext context.Context, tick in
 		}
 	}
 
+	return res, nil
+}
+
+func (m *MovementSystem) MoveEntitiesAcrossChunks(parentContext context.Context, entities []components.Entity, tick int64) error {
+	ctx, span := movementTracer.Start(parentContext, "movement.MoveEntitiesAcrossChunks")
+	defer span.End()
+
+	for _, entity := range entities {
+		pos := &components.Position{}
+		mov := &components.Moveable{}
+		if err := registry.LoadComponents(ctx, entity, pos, mov); err != nil {
+			return err
+		}
+
+		targetEntities, _, _, err := geo.FindInRange(ctx, pos.X+mov.VelX, pos.Y+mov.VelY, 0)
+		if err != nil {
+			return err
+		}
+		if len(targetEntities) > 0 {
+			// Something found in destination, can't move the entity.
+			// We stop it too.
+			registry.UpdateComponents(ctx, entity, &components.Moveable{})
+			err = m.visionSystem.HandleMovement(ctx, tick, entity, &components.Moveable{}, pos, pos)
+			if err != nil {
+				panic(err)
+			}
+			continue
+		}
+
+		newPos := &components.Position{X: pos.X + mov.VelX, Y: pos.Y + mov.VelY}
+		registry.UpdateComponents(ctx, entity, newPos)
+		err = m.visionSystem.HandleMovement(ctx, tick, entity, mov, pos, newPos)
+		if err != nil {
+			panic(err)
+		}
+		geo.OnMovePosition(ctx, entity, pos, newPos)
+	}
 	return nil
 }
