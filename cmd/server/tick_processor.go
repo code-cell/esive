@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"sync"
 
 	"github.com/code-cell/esive/actions"
 	components "github.com/code-cell/esive/components"
 	"github.com/code-cell/esive/queue"
 	"github.com/code-cell/esive/systems"
+	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
@@ -31,7 +33,27 @@ func NewTickProcessor(logger *zap.Logger, q *queue.Queue, actionsQueue *actions.
 }
 
 func (t *TickProcessor) Init() {
-	go t.q.Consume("tick", "actions", &queue.Tick{}, func(m proto.Message) {
+	go t.q.Consume("process-chunk-movements", "worker", &queue.ProcessChunkMovements{}, func(nm *nats.Msg, m proto.Message) {
+		data := m.(*queue.ProcessChunkMovements)
+		entities, err := t.movement.MoveAllEntitiesInChunk(context.Background(), data.ChunkX, data.ChunkY, data.Tick)
+		if err != nil {
+			panic(err)
+		}
+		ids := []int64{}
+		for _, id := range entities {
+			ids = append(ids, int64(id))
+		}
+		res := &queue.ProcessChunkMovementsRes{
+			Entities: ids,
+		}
+		payload, err := proto.Marshal(res)
+		if err != nil {
+			panic(err)
+		}
+		nm.Respond(payload)
+	})
+
+	go t.q.Consume("tick", "actions", &queue.Tick{}, func(_ *nats.Msg, m proto.Message) {
 		tickMessage := m.(*queue.Tick)
 		t.actionsQueue.CallActions(tickMessage.Tick, context.Background())
 
@@ -41,15 +63,27 @@ func (t *TickProcessor) Init() {
 		}
 
 		across := []components.Entity{}
+		acrossMtx := &sync.Mutex{}
+		wg := &sync.WaitGroup{}
+
 		for x, c := range chunks {
 			for y := range c {
-				entities, err := t.movement.MoveAllEntitiesInChunk(context.Background(), x, y, tickMessage.Tick)
-				if err != nil {
-					panic(err)
-				}
-				across = append(across, entities...)
+				x := x
+				y := y
+				wg.Add(1)
+				go func() {
+					entities, err := t.q.ProcessChunkMovements(context.Background(), tickMessage.Tick, x, y)
+					if err != nil {
+						panic(err)
+					}
+					acrossMtx.Lock()
+					across = append(across, entities...)
+					acrossMtx.Unlock()
+					wg.Done()
+				}()
 			}
 		}
+		wg.Wait()
 		if err := t.movement.MoveEntitiesAcrossChunks(context.Background(), across, tickMessage.Tick); err != nil {
 			panic(err)
 		}

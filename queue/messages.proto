@@ -10,3 +10,13 @@ message Tick {
 message TickServicesFinished {
   int64 tick = 1;
 }
+
+message ProcessChunkMovements {
+  int64 tick = 1;
+  int64 chunkX = 2;
+  int64 chunkY = 3;
+}
+
+message ProcessChunkMovementsRes {
+  repeated int64 entities = 1;
+}

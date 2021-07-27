@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/code-cell/esive/components"
 	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/proto"
 	// "github.com/nats-io/jsm.go"
@@ -66,7 +67,35 @@ func (q *Queue) HandleTickServicesDone(ctx context.Context, tick int64) {
 	}
 }
 
-func (q *Queue) Consume(subject, consumer string, message proto.Message, cb func(proto.Message)) {
+func (q *Queue) ProcessChunkMovements(ctx context.Context, tick int64, cx, cy int64) ([]components.Entity, error) {
+	t := &ProcessChunkMovements{
+		Tick:   tick,
+		ChunkX: cx,
+		ChunkY: cy,
+	}
+
+	payload, err := proto.Marshal(t)
+	if err != nil {
+		return nil, err
+	}
+
+	msg, err := q.nc.Request("process-chunk-movements", payload, 50*time.Millisecond)
+	if err != nil {
+		return nil, err
+	}
+	res := &ProcessChunkMovementsRes{}
+	if err := proto.Unmarshal(msg.Data, res); err != nil {
+		return nil, err
+	}
+
+	entities := []components.Entity{}
+	for _, id := range res.Entities {
+		entities = append(entities, components.Entity(id))
+	}
+	return entities, nil
+}
+
+func (q *Queue) Consume(subject, consumer string, message proto.Message, cb func(*nats.Msg, proto.Message)) {
 	sub, err := q.nc.QueueSubscribeSync(subject, consumer)
 	if err != nil {
 		panic(err)
@@ -83,6 +112,6 @@ func (q *Queue) Consume(subject, consumer string, message proto.Message, cb func
 
 		t := proto.Clone(message)
 		proto.Unmarshal(msg.Data, t)
-		cb(t)
+		cb(msg, t)
 	}
 }

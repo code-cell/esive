@@ -14,6 +14,7 @@ import (
 	"github.com/code-cell/esive/tick"
 	"github.com/go-redis/redis/extra/redisotel"
 	"github.com/go-redis/redis/v8"
+	"github.com/nats-io/nats.go"
 	"go.opentelemetry.io/otel/exporters/trace/jaeger"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -120,7 +121,7 @@ func main() {
 
 	s := newServer(logger, actionsQueue, registry, geo, vision, movement, chat, t)
 
-	go q.Consume("tick-services-finished", "grpc-flush", &queue.TickServicesFinished{}, func(m proto.Message) {
+	go q.Consume("tick-services-finished", "grpc-flush", &queue.TickServicesFinished{}, func(_ *nats.Msg, m proto.Message) {
 		s.flushVisibilityUpdates()
 	})
 
