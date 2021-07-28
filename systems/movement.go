@@ -6,6 +6,7 @@ import (
 	"github.com/code-cell/esive/components"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/sync/errgroup"
 )
 
 var movementTracer = otel.Tracer("systems/movement")
@@ -126,7 +127,7 @@ func (m *MovementSystem) ChunksWithMovingEntities(parentContext context.Context)
 
 // MoveAllEntitiesInChunk performs all movements within a chunk, and returns the entities that move across chunks for further processing.
 func (m *MovementSystem) MoveAllEntitiesInChunk(parentContext context.Context, chunkX, chunkY int64, tick int64) ([]components.Entity, error) {
-	ctx, span := movementTracer.Start(parentContext, "movement.ChunksWithMovingEntities")
+	ctx, span := movementTracer.Start(parentContext, "movement.MoveAllEntitiesInChunk")
 	defer span.End()
 
 	res := []components.Entity{}
@@ -206,19 +207,28 @@ func (m *MovementSystem) MoveAllEntitiesInChunk(parentContext context.Context, c
 	}
 
 	// Phase 3: Apply movements
+	errGr := &errgroup.Group{}
+
 	for x, row := range plannedMovements {
 		for y, entity := range row {
+			entity := entity
 			oldPos := positions[plannedMovingEntities[entity]]
 			mov := extras[plannedMovingEntities[entity]][0].(*components.Moveable)
 			newPos := &components.Position{X: x, Y: y}
 
-			registry.UpdateComponents(ctx, entity, newPos)
-			err = m.visionSystem.HandleMovement(ctx, tick, entity, mov, oldPos, newPos)
-			if err != nil {
-				panic(err)
-			}
-			geo.OnMovePosition(ctx, entity, oldPos, newPos)
+			errGr.Go(func() error {
+				registry.UpdateComponents(ctx, entity, newPos)
+				err = m.visionSystem.HandleMovement(ctx, tick, entity, mov, oldPos, newPos)
+				if err != nil {
+					return err
+				}
+				geo.OnMovePosition(ctx, entity, oldPos, newPos)
+				return nil
+			})
 		}
+	}
+	if err := errGr.Wait(); err != nil {
+		return nil, err
 	}
 
 	return res, nil

@@ -83,6 +83,9 @@ func (s *server) flushVisibilityUpdates() error {
 }
 
 func (s *server) SetVelocity(ctx context.Context, v *esive_grpc.Velocity) (*esive_grpc.MoveRes, error) {
+	playerID := ctx.Value("playerID").(string)
+	s.logger.Debug("Player set velocity", zap.String("playerID", playerID), zap.Int64("vx", v.X), zap.Int64("vy", v.Y))
+
 	tick, err := getTickFromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -283,7 +286,7 @@ func (h *serverStats) HandleRPC(ctx context.Context, s stats.RPCStats) {}
 func (h *serverStats) TagConn(ctx context.Context, info *stats.ConnTagInfo) context.Context {
 	playerID := uuid.New().String()
 	h.logger.Debug("Player connected", zap.String("playerID", playerID))
-	return context.WithValue(ctx, "playerID", "playerID")
+	return context.WithValue(ctx, "playerID", playerID)
 }
 
 func (h *serverStats) HandleConn(ctx context.Context, s stats.ConnStats) {
