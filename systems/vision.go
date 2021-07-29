@@ -8,6 +8,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/sync/errgroup"
 )
 
 var visionTracer = otel.Tracer("systems/vision")
@@ -83,6 +84,7 @@ func (s *VisionSystem) LookAll(ctx context.Context, entity components.Entity) ([
 	return res, nil
 }
 
+// TODO: Too iterative.
 func (s *VisionSystem) HandleMovement(parentContext context.Context, tick int64, entity components.Entity, mov *components.Moveable, oldPos, newPos *components.Position) error {
 	ctx, span := visionTracer.Start(parentContext, "vision.HandleMovement")
 	span.SetAttributes(
@@ -91,7 +93,8 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, tick int64,
 	defer span.End()
 
 	render := &components.Render{}
-	err := registry.LoadComponents(ctx, entity, render)
+	looker := &components.Looker{}
+	err := registry.LoadComponents(ctx, entity, render, looker)
 	if err != nil {
 		if err == redis.Nil {
 			// The entity has no renderer, nothing to do
@@ -101,90 +104,98 @@ func (s *VisionSystem) HandleMovement(parentContext context.Context, tick int64,
 	}
 
 	lookers, extras, err := registry.EntitiesWithComponentType(ctx, &components.Looker{}, &components.Looker{}, &components.Position{}, &components.Render{}, &components.Moveable{})
+	// lookers, lookersPos, extras, err := geo.FindInRange(ctx, newPos.X, newPos.Y, looker.Range*2, &components.Looker{}, &components.Render{}, &components.Moveable{})
 	if err != nil {
 		return err
 	}
+
+	errGr := &errgroup.Group{}
+
 	for i, lookerE := range lookers {
+		i := i
+		lookerE := lookerE
 		looker := extras[i][0].(*components.Looker)
 		lookerPos := extras[i][1].(*components.Position)
 		lookerRender := extras[i][2].(*components.Render)
 		lookerMov := extras[i][3].(*components.Moveable)
+		errGr.Go(func() error {
+			s.updatersMtx.Lock()
+			updater, found := s.updaters[lookerE]
+			s.updatersMtx.Unlock()
+			if !found {
+				return nil
+			}
 
-		s.updatersMtx.Lock()
-		updater, found := s.updaters[lookerE]
-		s.updatersMtx.Unlock()
-		if !found {
-			continue
-		}
-
-		if lookerE != entity {
-			// TODO: Store this data somehow, querying it all every time is a lot.
-			oldDist := lookerPos.Distance(oldPos)
-			newDist := lookerPos.Distance(newPos)
-			if oldDist <= looker.Range && newDist > looker.Range {
-				updater.HandleVisibilityLostSight(entity, tick)
-			} else if newDist <= looker.Range {
-				updater.HandleTickUpdate(&VisionSystemLookItem{
-					ID:    int64(entity),
-					X:     newPos.X,
-					Y:     newPos.Y,
-					VelX:  mov.VelX,
-					VelY:  mov.VelY,
-					Char:  render.Char,
-					Color: render.Color,
-				}, tick)
-			}
-		} else {
-			// Send its own update in case it went offsync.
-			updater.HandleTickUpdate(&VisionSystemLookItem{
-				ID:    int64(entity),
-				X:     lookerPos.X,
-				Y:     lookerPos.Y,
-				Char:  lookerRender.Char,
-				Color: lookerRender.Color,
-				VelX:  lookerMov.VelX,
-				VelY:  lookerMov.VelY,
-			}, tick)
-
-			oldEntities, _, _, err := geo.FindInRange(ctx, oldPos.X, oldPos.Y, looker.Range)
-			if err != nil {
-				return err
-			}
-			newEntities, newPositions, extras, err := geo.FindInRange(ctx, newPos.X, newPos.Y, looker.Range, &components.Render{}, &components.Moveable{})
-			if err != nil {
-				return err
-			}
-			oldIdx := map[components.Entity]struct{}{}
-			newIdx := map[components.Entity]struct{}{}
-			for _, e := range oldEntities {
-				oldIdx[e] = struct{}{}
-			}
-			for _, e := range newEntities {
-				newIdx[e] = struct{}{}
-			}
-			for _, oldEntity := range oldEntities {
-				if _, foundInNew := newIdx[oldEntity]; !foundInNew {
-					updater.HandleVisibilityLostSight(oldEntity, tick)
-				}
-			}
-			for i, newEntity := range newEntities {
-				if _, foundInOld := oldIdx[newEntity]; !foundInOld {
-					render := extras[i][0].(*components.Render)
-					mov := extras[i][1].(*components.Moveable)
+			if lookerE != entity {
+				// TODO: Store this data somehow, querying it all every time is a lot.
+				oldDist := lookerPos.Distance(oldPos)
+				newDist := lookerPos.Distance(newPos)
+				if oldDist <= looker.Range && newDist > looker.Range {
+					updater.HandleVisibilityLostSight(entity, tick)
+				} else if newDist <= looker.Range {
 					updater.HandleTickUpdate(&VisionSystemLookItem{
-						ID:    int64(newEntity),
-						X:     newPositions[i].X,
-						Y:     newPositions[i].Y,
+						ID:    int64(entity),
+						X:     newPos.X,
+						Y:     newPos.Y,
 						VelX:  mov.VelX,
 						VelY:  mov.VelY,
 						Char:  render.Char,
 						Color: render.Color,
 					}, tick)
 				}
+			} else {
+				// Send its own update in case it went offsync.
+				updater.HandleTickUpdate(&VisionSystemLookItem{
+					ID:    int64(entity),
+					X:     lookerPos.X,
+					Y:     lookerPos.Y,
+					Char:  lookerRender.Char,
+					Color: lookerRender.Color,
+					VelX:  lookerMov.VelX,
+					VelY:  lookerMov.VelY,
+				}, tick)
+
+				oldEntities, _, _, err := geo.FindInRange(ctx, oldPos.X, oldPos.Y, looker.Range)
+				if err != nil {
+					return err
+				}
+				newEntities, newPositions, extras, err := geo.FindInRange(ctx, newPos.X, newPos.Y, looker.Range, &components.Render{}, &components.Moveable{})
+				if err != nil {
+					return err
+				}
+				oldIdx := map[components.Entity]struct{}{}
+				newIdx := map[components.Entity]struct{}{}
+				for _, e := range oldEntities {
+					oldIdx[e] = struct{}{}
+				}
+				for _, e := range newEntities {
+					newIdx[e] = struct{}{}
+				}
+				for _, oldEntity := range oldEntities {
+					if _, foundInNew := newIdx[oldEntity]; !foundInNew {
+						updater.HandleVisibilityLostSight(oldEntity, tick)
+					}
+				}
+				for i, newEntity := range newEntities {
+					if _, foundInOld := oldIdx[newEntity]; !foundInOld {
+						render := extras[i][0].(*components.Render)
+						mov := extras[i][1].(*components.Moveable)
+						updater.HandleTickUpdate(&VisionSystemLookItem{
+							ID:    int64(newEntity),
+							X:     newPositions[i].X,
+							Y:     newPositions[i].Y,
+							VelX:  mov.VelX,
+							VelY:  mov.VelY,
+							Char:  render.Char,
+							Color: render.Color,
+						}, tick)
+					}
+				}
 			}
-		}
+			return nil
+		})
 	}
-	return nil
+	return errGr.Wait()
 }
 
 func (s *VisionSystem) HandleNewComponent(ctx context.Context, tick int64, t string, entity components.Entity) error {
