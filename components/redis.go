@@ -150,13 +150,16 @@ func (s *RedisStore) Sort(ctx context.Context, key string, values ...proto.Messa
 		}
 
 		entityComponents := make([]proto.Message, 0)
+
+		// TODO: This doesn't seem to be used, check what happens
 		allComponents := true
 		for i, componentType := range values {
-			err = proto.Unmarshal([]byte(resStr[idx+1+i]), componentType)
+			clone := proto.Clone(componentType)
+			err = proto.Unmarshal([]byte(resStr[idx+1+i]), clone)
 			if err != nil {
 				return nil, nil, err
 			}
-			entityComponents = append(entityComponents, proto.Clone(componentType))
+			entityComponents = append(entityComponents, clone)
 		}
 
 		if allComponents {

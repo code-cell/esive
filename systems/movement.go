@@ -130,6 +130,7 @@ func (m *MovementSystem) MoveAllEntitiesInChunk(parentContext context.Context, c
 	ctx, span := movementTracer.Start(parentContext, "movement.MoveAllEntitiesInChunk")
 	defer span.End()
 
+	errGr := &errgroup.Group{}
 	res := []components.Entity{}
 
 	entities, positions, extras, err := geo.FindInChunk(ctx, chunkX, chunkY, &components.Moveable{})
@@ -197,17 +198,15 @@ func (m *MovementSystem) MoveAllEntitiesInChunk(parentContext context.Context, c
 			continue
 		}
 		// There's an entity planning to move here. We make it stop and remove it from the plan
-		registry.UpdateComponents(ctx, movingEntity, &components.Moveable{})
-		err = m.visionSystem.HandleMovement(ctx, tick, movingEntity, &components.Moveable{}, pos, pos)
-		if err != nil {
-			panic(err)
-		}
+		errGr.Go(func() error {
+			registry.UpdateComponents(ctx, movingEntity, &components.Moveable{})
+			return m.visionSystem.HandleMovement(ctx, tick, movingEntity, &components.Moveable{}, pos, pos)
+		})
 		delete(plannedMovements[pos.X], pos.Y)
 		delete(plannedMovingEntities, movingEntity)
 	}
 
 	// Phase 3: Apply movements
-	errGr := &errgroup.Group{}
 
 	for x, row := range plannedMovements {
 		for y, entity := range row {

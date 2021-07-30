@@ -31,7 +31,7 @@ func Setup(t *testing.T) *Env {
 	SetRegistry(registry)
 	SetGeo(geo)
 
-	vision := NewVisionSystem()
+	vision := NewVisionSystem(15)
 	movement := NewMovementSystem(vision)
 
 	return &Env{

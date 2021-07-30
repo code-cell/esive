@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"sync"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -163,24 +165,37 @@ func (g *Geo) FindInRange(parentCtx context.Context, x, y int64, rng float32, ex
 
 	queryComponents := append([]proto.Message{&Position{}}, extraComponents...)
 
+	mtx := &sync.Mutex{}
+	errGr := &errgroup.Group{}
+
 	for chunkX := originChunkX - chunksInRange; chunkX <= originChunkX+chunksInRange; chunkX++ {
 		for chunkY := originChunkY - chunksInRange; chunkY <= originChunkY+chunksInRange; chunkY++ {
-			logger.Debug("checking chunk", zap.Int64("chunkX", chunkX), zap.Int64("chunkY", chunkY))
+			chunkX := chunkX
+			chunkY := chunkY
+			errGr.Go(func() error {
+				logger.Debug("checking chunk", zap.Int64("chunkX", chunkX), zap.Int64("chunkY", chunkY))
 
-			e, c, err := g.registry.LoadComponentsFromIndex(ctx, g.key(chunkX, chunkY), queryComponents...)
-			if err != nil {
-				logger.Error("error finding chunk members", zap.Error(err))
-				return nil, nil, nil, err
-			}
-			for i, entity := range e {
-				pos := c[i][0].(*Position)
-				if Distance(x, y, pos.X, pos.Y) <= rng {
-					entities = append(entities, entity)
-					positions = append(positions, pos)
-					extras = append(extras, c[i][1:])
+				e, c, err := g.registry.LoadComponentsFromIndex(ctx, g.key(chunkX, chunkY), queryComponents...)
+				if err != nil {
+					logger.Error("error finding chunk members", zap.Error(err))
+					return err
 				}
-			}
+				mtx.Lock()
+				for i, entity := range e {
+					pos := c[i][0].(*Position)
+					if Distance(x, y, pos.X, pos.Y) <= rng {
+						entities = append(entities, entity)
+						positions = append(positions, pos)
+						extras = append(extras, c[i][1:])
+					}
+				}
+				mtx.Unlock()
+				return nil
+			})
 		}
+	}
+	if err := errGr.Wait(); err != nil {
+		return nil, nil, nil, err
 	}
 	return entities, positions, extras, nil
 }

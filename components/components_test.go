@@ -65,7 +65,7 @@ func TestRegistryLoadComponents(t *testing.T) {
 	render := &Render{Char: "@", Color: 0xFF0000FF}
 	require.NoError(t, registry.CreateComponents(context.Background(), entityWithPositionAndRender, render))
 
-	looker := &Looker{Range: 10.0}
+	looker := &Looker{}
 	require.NoError(t, registry.CreateComponents(context.Background(), entityWithLooker, looker))
 
 	ids, _, err := registry.EntitiesWithComponentType(context.Background(), &Looker{})

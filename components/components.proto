@@ -21,7 +21,6 @@ message Named {
 }
 
 message Looker {
-  float range = 1;
 }
 
 message Speaker {

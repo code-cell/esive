@@ -169,9 +169,9 @@ func (s *server) Join(ctx context.Context, req *esive_grpc.JoinReq) (*esive_grpc
 		&components.Named{Name: req.Name},
 		&components.Position{X: rand.Int63n(10) - 5, Y: rand.Int63n(10) - 5},
 		&components.Moveable{},
-		&components.Speaker{Range: float32(*viewRadius)},
+		&components.Speaker{Range: float32(*visibilityRadius)},
 		&components.Render{Char: "@", Color: 0x5bd54dff},
-		&components.Looker{Range: float32(*viewRadius)},
+		&components.Looker{},
 	)
 	if err != nil {
 		panic(err)

@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	viewRadius          = flag.Int("radius", 15, "Radius used for visibility and for chunk size")
+	visibilityRadius    = flag.Int("visibility", 15, "Radius used for visibility and for chunk size")
 	initialTestEntities = flag.Int("test-entities", 100, "Amount of test entities (a #). This will only trigger if redis database is flushed.")
 	redisAddr           = flag.String("redis-addr", "localhost:6379", "Redis address")
 	redisUsername       = flag.String("redis-username", "", "Redis username")
@@ -63,11 +63,11 @@ func main() {
 	actionsQueue := actions.NewActionsQueue()
 	store := components.NewRedisStore(rdb, logger)
 	registry := components.NewRegistry(store, logger)
-	geo := components.NewGeo(registry, store, *viewRadius, logger)
+	geo := components.NewGeo(registry, store, *visibilityRadius, logger)
 	systems.SetRegistry(registry)
 	systems.SetGeo(geo)
 
-	vision := systems.NewVisionSystem()
+	vision := systems.NewVisionSystem(*visibilityRadius)
 	movement := systems.NewMovementSystem(vision)
 	chat := systems.NewChatSystem(actionsQueue, movement, registry)
 

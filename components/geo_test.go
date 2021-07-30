@@ -54,7 +54,6 @@ func TestGeo(t *testing.T) {
 	require.NoError(t, err)
 
 	require.ElementsMatch(t, validEntities, found)
-
 }
 
 // func TestGeo_HandleUpdates(t *testing.T) {
