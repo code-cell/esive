@@ -107,7 +107,7 @@ func (m *MovementSystem) ChunksWithMovingEntities(parentContext context.Context)
 		return nil, err
 	}
 
-	for i, _ := range movingEntities {
+	for i := range movingEntities {
 		mov := movingEntitiesExtras[i][0].(*components.Moveable)
 		pos := movingEntitiesExtras[i][1].(*components.Position)
 		if mov.VelX == 0 && mov.VelY == 0 {
